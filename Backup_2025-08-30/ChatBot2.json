@@ -1,0 +1,327 @@
+ {
+  "createdAt": "2025-06-03T17:51:36.061Z",
+  "updatedAt": "2025-07-23T07:12:50.000Z",
+  "id": "QuhbO1X8nZoMGV9r",
+  "name": "ChatBot2",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/support-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "275c3d5c-bb1f-4c55-a58c-885d1318d545",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1020,
+        160
+      ],
+      "webhookId": "support-agent-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input validation and preprocessing\nconst input = $input.first();\nconst body = input.json.body || {};\n\n// Validate required fields\nif (!body.message) {\n  throw new Error('Message field is required');\n}\n\n// Extract and clean the message\nconst userMessage = body.message.trim();\n\n// Prepare data for AI agent\nreturn {\n  message: userMessage,\n  timestamp: new Date().toISOString(),\n  user_id: body.user_id || 'anonymous',\n  session_id: body.session_id || Math.random().toString(36).substr(2, 9)\n};"
+      },
+      "id": "782516aa-5b33-4b0a-80b5-695c50576168",
+      "name": "Input Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -780,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "agent": "openAiFunctionsAgent",
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "=You are a helpful customer support agent for Kirloskar Pumps, a leading pump manufacturer. Your role is to assist customers with:\n\nProduct Inquiries & Recommendations\n- Help customers find the right pump products\n- Show available categories and products\n- Provide product details and specifications\n- Handle pagination for large product lists. \n\nOrder Management:\n- Authenticate customers securely\n- Retrieve order history\n- Provide specific order details\n- Help with order status inquiries\n\nGeneral Customer Support:\n- Answer questions about company policies\n- Provide contact information\n- Handle general inquiries professionally\n\nContact Information:\n- Toll-Free Number: 1800-123-4443\n- Office Address: Kirloskar Brothers Limited, S.No.98(3 to 7), Plot No.3, Baner, Pune 411045, Maharashtra, INDIA\n- Website: https://www.kirloskarpumps.com\n\nGuidelines:\n1. Always be polite, professional, and helpful\n2. For product inquiries, first show categories, then products based on selection\n3. For order history, always ask for email password first, then validate user and get user token\n4. Handle errors gracefully and provide alternative solutions\n5. If you can't help with something, provide contact information\n6. Keep responses concise but informative\n7. Always confirm user selections before proceeding\n\nSecurity Notes:\n- Never store or log customer passwords\n- Handle authentication tokens securely\n- Respect customer privacy\n- Use the available tools to fetch real-time data from the Magento store and provide accurate, up-to-date information to customers."
+        }
+      },
+      "id": "79d8456a-9618-40be-be34-88f73ab2282e",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "get product category list",
+        "method": "POST",
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"query\": \"query { categories(filters: { name: { match: default } }) { items { id name url_key level children_count children { id name url_key level } } } }\"\n}"
+      },
+      "id": "b0d690e5-bf0a-4ca6-b29e-d360e8459cca",
+      "name": "Get Categories Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1,
+      "position": [
+        -440,
+        480
+      ],
+      "typeOptions": {
+        "httpRequest": {
+          "url": "https://eshop.kirloskarpumps.com/graphql",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "query": "query { categories(filters: {}) { items { id name url_key level children_count children { id name url_key level } } } }"
+          }
+        },
+        "responseParser": {
+          "type": "javascript",
+          "code": "const response = JSON.parse(rawResponse);\nconst categories = response.data?.categories?.items || [];\nconst formattedCategories = categories.map(cat => ({\n  id: cat.id,\n  name: cat.name,\n  url_key: cat.url_key,\n  level: cat.level,\n  children_count: cat.children_count,\n  children: cat.children || []\n}));\nreturn JSON.stringify({\n  success: true,\n  data: formattedCategories,\n  message: \"Categories fetched successfully\"\n});"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.output }}",
+        "options": {}
+      },
+      "id": "fd0eac78-9009-4c49-a50a-299e6c1213ce",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        20,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -880,
+        440
+      ],
+      "id": "7d8698df-3f59-45a1-b4af-ba89ad185e67",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "get the list of products from a category with category id",
+        "method": "POST",
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('JSON', `User the bellow Json replace category_id\n{\n    \"query\": \"query { products(filter: { category_id: { eq: 3 } }, pageSize: 10, currentPage: 1) { items { id name sku price { regularPrice { amount { value currency } } } small_image { url } url_key } total_count } }\"\n}`, 'json') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        480
+      ],
+      "id": "5ba23571-57a9-42d5-ae79-399cde88c353",
+      "name": "Get Products"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.user_id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -640,
+        480
+      ],
+      "id": "95ed162e-399c-458f-8369-f0daed0923fa",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Validate User with username/email and password and fetch user token",
+        "method": "POST",
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('JSON', `replace email and password\n{\n    \"query\": \"mutation { generateCustomerToken(email: \\\\\"jayprakash.k@iksula.com\\\\\", password: \\\\\"jayprakash@123\\\\\") { token } }\"\n}`, 'json') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        480
+      ],
+      "id": "1b98d4e8-713a-4ea2-a57b-2f42b7b658eb",
+      "name": "Validate User"
+    },
+    {
+      "parameters": {
+        "toolDescription": "get order list for the user",
+        "method": "POST",
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('JSON', `replace the token\n{\n    \"Content-Type\": \"application/json\",\n    \"Authorization\": \"Bearer token\"\n  }`, 'json') }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"query { customer { orders(pageSize: 10, currentPage: 1) { items { id number order_date status grand_total shipping_address { firstname lastname street city region postcode country_code telephone } items { product_name product_sku } } page_info { current_page page_size total_pages } total_count } } }\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        140,
+        480
+      ],
+      "id": "9758add7-a430-47e8-a634-861dca722310",
+      "name": "Get Order List"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Input Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validation": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Categories Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Products": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate User": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order List": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d32dac82-55d1-4f05-9e71-6199369a4f7d",
+  "triggerCount": 1,
+  "tags": []
+}
