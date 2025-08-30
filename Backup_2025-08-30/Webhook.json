@@ -1,0 +1,146 @@
+ {
+  "createdAt": "2025-07-15T13:32:54.803Z",
+  "updatedAt": "2025-07-21T10:17:47.000Z",
+  "id": "oYuKsnbN9D6AQCMX",
+  "name": "Webhook",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "poll-messages",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "65124357-5899-4b5b-8e31-51fd0dd56afe",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        720,
+        140
+      ],
+      "webhookId": "9f90e791-3b0b-43c9-979e-27cf4fce5121"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and validate input data\nconst body = $input.item.json.body;\nconst sessionId = body?.sessionId;\nconst lastTimestamp = body?.lastTimestamp;\n\n// Log for debugging\nconsole.log('Received data:', { sessionId, lastTimestamp });\n\n// Validate required fields\nif (!sessionId) {\n  throw new Error('sessionId is required');\n}\n\nif (!lastTimestamp) {\n  throw new Error('lastTimestamp is required');\n}\n\nreturn {\n  sessionId,\n  lastTimestamp\n};"
+      },
+      "id": "b5b00d32-387a-46f9-9180-b592fbb5c7cb",
+      "name": "Extract Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  message->>'content' as content,\n  created_at as timestamp,\n  sender_type as sender\nFROM n8n_chat_histories\nWHERE \n  session_id = $1 \n  AND (sender_type = 'human_agent' OR sender_type = 'user')\n  AND created_at > $2\nORDER BY created_at ASC",
+        "options": {
+          "queryReplacement": "={{ [$json.sessionId, $json.lastTimestamp] }}"
+        }
+      },
+      "id": "28e05d53-9440-4434-8f67-1824b940f114",
+      "name": "PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1120,
+        140
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle both empty and filled results\nconst results = $input.all();\n\nreturn {\n  success: true,\n  data: results,\n  count: results.length,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "3ccb72b4-2b68-4cb9-8eed-cc1547bff2b6",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "4c64cd5d-f784-40fb-9bf1-6fe469b50f45",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1520,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "ae382f13-836e-4826-996f-491a563f6637",
+  "triggerCount": 1,
+  "tags": []
+}
