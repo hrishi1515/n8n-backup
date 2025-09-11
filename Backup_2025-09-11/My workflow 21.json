@@ -1,0 +1,1114 @@
+ {
+  "createdAt": "2025-06-20T15:39:10.895Z",
+  "updatedAt": "2025-06-20T15:39:10.000Z",
+  "id": "VGQBV7FBR6T2sqtT",
+  "name": "My workflow 21",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "={{ $env.EMAIL_ADDRESS_JOE }} ",
+        "subject": "=💡New Audio File Created - Approve Transcription Service",
+        "message": "=A new was just created in the Audio Recordings folder on Google Drive.  Would you like to continue the workflow and Transcribe the audio file and generate reports.",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 45,
+              "resumeUnit": "minutes"
+            }
+          }
+        }
+      },
+      "id": "2d42e936-5661-453a-86a9-25837e0e3cd0",
+      "name": "Gmail User for Approval",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        460,
+        120
+      ],
+      "webhookId": "c46cf421-ddb6-45a8-b83b-80b381666f0e",
+      "typeVersion": 2.1,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "## 3️⃣ Transcribe Audio",
+        "height": 280,
+        "width": 260,
+        "color": 3
+      },
+      "id": "e9683ab3-3a29-4586-b9e9-adb4933e19a5",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -220,
+        820
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2f5cef95-a26b-46ff-ab9a-501187ce4211",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "id": "ac623698-1263-4b83-8c59-159863d950b9",
+              "name": "datetime",
+              "type": "string",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "de349cb7-ad9f-492f-a6b6-3d55f83136fc",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        100,
+        920
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "2f8b307d-53be-4d33-ad5a-4815723256eb",
+      "name": "Transcribe with OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        -140,
+        920
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 4️⃣ Process Transcript and Generate Structured JSON Report",
+        "height": 280,
+        "width": 1560,
+        "color": 5
+      },
+      "id": "c05b638c-f099-4626-a0be-72f216acbf3e",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        280,
+        720
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 5️⃣ Process Transcript and Generate Structured JSON -> Markdown Report",
+        "height": 280,
+        "width": 1560,
+        "color": 6
+      },
+      "id": "8e989893-9cce-4223-a76a-72468db22263",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        280,
+        1040
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 6️⃣ Save Raw Transcript to Google Drive",
+        "height": 280,
+        "width": 460,
+        "color": 2
+      },
+      "id": "0fc2f326-d230-490b-9437-21845431c7d0",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1100,
+        1360
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 1️⃣ Start Transcription Service",
+        "height": 300,
+        "width": 300,
+        "color": 4
+      },
+      "id": "85bcd78b-d352-4833-a26e-f89d8f9c7d49",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        380
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Wait for Google Drive Trigger and Send for User Approval to Proceed (Human in the Loop)\n(optional)",
+        "height": 340,
+        "width": 700
+      },
+      "id": "eefe5d0b-4fbe-449e-9ed2-9b5e14d82bb7",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 2️⃣ Search and Download Audio File from Google Drive\n💡Note:  Adjust Filter and Limit settings for your needs",
+        "height": 300,
+        "width": 880,
+        "color": 2
+      },
+      "id": "39f1b469-7710-4414-8a7c-81adf7ab2225",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        780,
+        380
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": false,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "420e1a9c-2145-4845-b4b0-31a82855a78c",
+              "operator": {
+                "type": "string",
+                "operation": "endsWith"
+              },
+              "leftValue": "={{ $json.name }}",
+              "rightValue": ".m4a"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "id": "e66e56a1-bfe5-48a1-873d-ea9a499f9d1d",
+      "name": "Filter by .m4a extension",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        1080,
+        480
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "keep": "lastItems"
+      },
+      "id": "62548483-cb4d-401c-afd4-b76c4356c823",
+      "name": "Limit to last file",
+      "type": "n8n-nodes-base.limit",
+      "position": [
+        1280,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {}
+      },
+      "id": "e989d405-4737-472a-af32-2ebed9d50b42",
+      "name": "Download audio file",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1480,
+        480
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+            "cachedResultName": "Audio Recordings"
+          },
+          "whatToSearch": "files"
+        },
+        "options": {}
+      },
+      "id": "b5232a55-0149-4d24-aef7-126a0c466aa9",
+      "name": "Search Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        880,
+        480
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 7️⃣ Send Transcription Report Links to User",
+        "height": 480,
+        "width": 660
+      },
+      "id": "601ca322-73e2-47cd-ba49-8d8d5108d37c",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2120,
+        840
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=Audio Transcribed and Reports Generated\n{{ $json.id_json.webViewLink }}\n{{ $json.id_markdown.webViewLink }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "07e20034-2ae1-49ab-bf16-31407e977d32",
+      "name": "Send Telegram Message",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        2560,
+        1120
+      ],
+      "webhookId": "bb40ede7-03cf-493d-b051-196b96725925",
+      "typeVersion": 1.2,
+      "credentials": {
+        "telegramApi": {
+          "id": "vqVbIlTcdfYIK7un",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.EMAIL_ADDRESS_JOE }} ",
+        "subject": "Audio Transcribed and Reports Generated",
+        "message": "={{ $json.message.content }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "96229180-b91b-4a7d-a6d5-dfaa7b7e546b",
+      "name": "Send Gmail Message",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        2560,
+        940
+      ],
+      "webhookId": "0a81b95a-cd82-465d-8450-cf38518a4cbb",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ezpyGy4zdotk5Sjx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Prapare this HTML template using the following: \n{{ $json.id_json.toJsonString() }}\n{{ $json.id_markdown.toJsonString() }}\n\nEnsure that the 'webViewLink' is always provided.\n\nRespond only with HTML and avoid any preamble or further explanation.  Remove all ``` or ```html from final response.\n\n<style type=\"text/css\">\n    /* Reset styles */\n    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }\n    .wrapper { max-width: 600px; margin: 0 auto; }\n    .content { padding: 30px; line-height: 1.6; color: #333333; }\n    .divider { border-top: 1px solid #eeeeee; margin: 25px 0; }\n    .button { display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px; }\n</style>\n</head>\n<body>\n    <div class=\"wrapper\">\n        <div class=\"content\">\n            <h2 style=\"color: #1f2937; margin-bottom: 20px;\">Your Documents</h2>\n            \n            <div style=\"margin-bottom: 30px;\">\n                <h3 style=\"color: #374151; margin-bottom: 12px;\">[name]</h3>\n                <a href=\"[webViewLink]\" class=\"button\" style=\"color: white;\">View Document</a>\n            </div>\n\n            <div class=\"divider\"></div>\n\n            [continue the pattern ...]\n\n        </div>\n    </div>\n</body>"
+            },
+            {
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1c8dc36c-4487-4474-8167-c64ee90de745",
+      "name": "Email Content Formatter",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        2200,
+        940
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=\"Today is \" {{ $now }}  \"Transcript: \" {{  $json.text }}"
+            },
+            {
+              "content": "## ROLE\nYou are an expert at summarizing long transcripts.\n\n## TASK\nSummarize the provided transcript into a structured JSON format.\n\n## RULES\nReturn only valid JSON in this example format:\n\"transcript_report\": {\n\"title\": \"Notion Buttons\",\n\"summary\": \"A collection of buttons for Notion\",\n\"main_points\": [\"item 1\", \"item 2\", \"item 3\"],\n\"action_items\": [\"item 1\", \"item 2\", \"item 3\"],\n\"follow_up\": [\"item 1\", \"item 2\", \"item 3\"],\n\"stories\": [\"item 1\", \"item 2\", \"item 3\"],\n\"references\": [\"item 1\", \"item 2\", \"item 3\"],\n\"arguments\": [\"item 1\", \"item 2\", \"item 3\"],\n\"related_topics\": [\"item 1\", \"item 2\", \"item 3\"],\n\"sentiment\": \"positive\"\n}",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "id": "5afc8b0e-6b3e-477e-a9e3-c8f656a4218d",
+      "name": "Summarize to Structured JSON",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        340,
+        800
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Transcript: {{  $json.text }}"
+            },
+            {
+              "content": "=## ROLE: Expert Transcript Analyst\n**Current Date:** {{ $now }}\n**Specialization:** Technical documentation, executive reporting, and information architecture\n\n\n## TASK: Create Structured Transcript Summary\nTransform verbose transcripts into well-organized technical documents using this 3-step process:\n1. Extract key information\n2. Identify natural thematic groupings\n3. Structure for optimal scannability\n\n\n## FORMAT REQUIREMENTS\n[Document Title] - {{ $now }}\n\nExecutive Summary (3-5 sentences)\n- Core purpose of discussion\n- Key decision points\n- Actionable outcomes\n\nDetailed Analysis\n[Topic 1: Clear Section Name]\n- Key statements\n- Supporting data points\n- Action items\n\n[Topic 2: Specific Category]\n-Decision rationale\n-Contradictions/agreements\n-Follow-up requirements\n\n(...continue pattern...)\n\nAdditional Observations\n- Unresolved questions\n- Technical terminology glossary\n- Participant sentiment trends\n\n\n## RULES\n1. **Content Fidelity**\n   - Never add external knowledge\n   - Preserve quantitative data exactly\n   - Maintain speaker intent through paraphrasing\n\n2. **Structural Requirements**\n   - Use H2/H3 headers only\n   - Apply consistent tense (prefer present)\n   - Include timestamps for critical points [00:00]\n\n3. **Style Guidelines**\n   - Technical > conversational tone\n   - Active voice required\n   - Bullet points for lists\n   - **Bold** key decisions\n\n4. **Validation**\n   - Self-check for topic overlap\n   - Verify chronological accuracy\n   - Confirm all action items are highlighted",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "id": "cc68f0b5-72b5-418b-837a-e4b461951a2e",
+      "name": "Summarize to JSON",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        340,
+        1120
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Today is: {{ $now }}\nTranscript: {{ $json.message.content.toJsonString() }}"
+            },
+            {
+              "content": "Convert this transcript summary to a markdown document.  Only respond with text and remove all ``` or ```markdown.",
+              "role": "system"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ddc793e-46f5-4892-9b6c-d5561b57757b",
+      "name": "Convert JSON to Markdown",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        720,
+        1120
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0c31c80-87c9-41e5-ae07-8639bf52870c",
+              "name": "filename",
+              "type": "string",
+              "value": "={{ $('Download audio file').item.json.id }}-{{ $('Download audio file').item.json.name }}-{{ $('Set Config').item.json.datetime }}.json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9f2ab0cf-8d24-453d-aa8f-54ae63a0acec",
+      "name": "Get Filename for JSON",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1080,
+        800
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a0c31c80-87c9-41e5-ae07-8639bf52870c",
+              "name": "filename",
+              "type": "string",
+              "value": "={{ $('Download audio file').item.json.id }} - {{ $('Download audio file').item.json.name }}- {{ $('Set Config').item.json.datetime }}.md"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "732290d6-a56e-43aa-9150-60eadaa0b5f5",
+      "name": "Get Filename for Markdown",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1080,
+        1120
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $('Summarize to Structured JSON').item.json.message.content.toJsonString() }}",
+        "name": "={{ $json.filename }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+          "cachedResultName": "Audio Recordings"
+        },
+        "options": {}
+      },
+      "id": "29e10cc7-7970-4d0c-8920-e85c2ed9b1f8",
+      "name": "Save JSON file to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1280,
+        800
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $('Convert JSON to Markdown').item.json.message.content }}",
+        "name": "={{ $json.filename }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+          "cachedResultName": "Audio Recordings"
+        },
+        "options": {}
+      },
+      "id": "9dab555b-9c04-4dab-9111-ccbfcbab2d82",
+      "name": "Save Markdown file to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1280,
+        1120
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $('Get Filename for JSON').item.json.filename }}",
+        "filter": {
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "webViewLink",
+            "name"
+          ]
+        }
+      },
+      "id": "370f0e24-c409-4089-be58-8658e15a7dd0",
+      "name": "Get JSON File Meta",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1480,
+        800
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $('Get Filename for Markdown').item.json.filename }}",
+        "filter": {
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "webViewLink",
+            "name"
+          ]
+        }
+      },
+      "id": "b7d0dc54-590a-4eed-b55d-5d0c7cd8209a",
+      "name": "Get Markdown File Meta",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1480,
+        1120
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c89d0613-9b1e-4906-a4d2-ecc5fe585f5b",
+              "name": "id_json",
+              "type": "object",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9805b412-dd07-484e-9ae7-87c0bb7c52bd",
+      "name": "Prepare Response JSON",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1680,
+        800
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9e23ce26-bdf5-46c8-9099-02179cd29fc5",
+              "name": "id_markdown",
+              "type": "object",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7c091007-0b2b-4a49-bed4-38797849c9ce",
+      "name": "Prepare Response Markdown",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1680,
+        1120
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "id": "92f5b064-427e-4489-8169-0121b1c9bdde",
+      "name": "Merge All Paths",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        1940,
+        1120
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{  $('Transcribe with OpenAI').item.json.text }}",
+        "name": "={{ $('Download audio file').item.json.id }} - {{ $('Download audio file').item.json.name }}- {{ $('Set Config').item.json.datetime }}.txt",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+          "cachedResultName": "Audio Recordings"
+        },
+        "options": {}
+      },
+      "id": "43d29047-a83f-485e-a09d-a1c45e1a8f35",
+      "name": "Save Raw Transcript to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "position": [
+        1280,
+        1440
+      ],
+      "typeVersion": 3,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "e015461e-ba5f-4bef-9b14-1a283959c9b7",
+      "name": "Start Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        100,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1Wqd4zEEb847gFYKoDBbNnXsWEc-kCAm2",
+          "cachedResultName": "Audio Recordings"
+        },
+        "event": "fileCreated",
+        "options": {
+          "fileType": "application/vnd.google-apps.audio"
+        }
+      },
+      "id": "aed5b399-6142-41c0-9935-b9256dd22a20",
+      "name": "On File Created Trigger",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "position": [
+        100,
+        120
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      },
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Set Config": {
+      "main": [
+        [
+          {
+            "node": "Summarize to JSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Summarize to Structured JSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Raw Transcript to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Workflow": {
+      "main": [
+        [
+          {
+            "node": "Search Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge All Paths": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Content Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize to JSON": {
+      "main": [
+        [
+          {
+            "node": "Convert JSON to Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get JSON File Meta": {
+      "main": [
+        [
+          {
+            "node": "Prepare Response JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to last file": {
+      "main": [
+        [
+          {
+            "node": "Download audio file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download audio file": {
+      "main": [
+        [
+          {
+            "node": "Transcribe with OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Filter by .m4a extension",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Filename for JSON": {
+      "main": [
+        [
+          {
+            "node": "Save JSON file to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Response JSON": {
+      "main": [
+        [
+          {
+            "node": "Merge All Paths",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Markdown File Meta": {
+      "main": [
+        [
+          {
+            "node": "Prepare Response Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe with OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Set Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Content Formatter": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail User for Approval": {
+      "main": [
+        [
+          {
+            "node": "Search Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On File Created Trigger": {
+      "main": [
+        [
+          {
+            "node": "Gmail User for Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert JSON to Markdown": {
+      "main": [
+        [
+          {
+            "node": "Get Filename for Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter by .m4a extension": {
+      "main": [
+        [
+          {
+            "node": "Limit to last file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Filename for Markdown": {
+      "main": [
+        [
+          {
+            "node": "Save Markdown file to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Response Markdown": {
+      "main": [
+        [
+          {
+            "node": "Merge All Paths",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Summarize to Structured JSON": {
+      "main": [
+        [
+          {
+            "node": "Get Filename for JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save JSON file to Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Get JSON File Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Markdown file to Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Get Markdown File Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Raw Transcript to Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Merge All Paths",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "a0e86ee7-eeb6-4aab-ac03-3ddd424a60c4",
+  "triggerCount": 0,
+  "tags": []
+}
