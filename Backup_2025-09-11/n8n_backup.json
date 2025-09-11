@@ -1,0 +1,248 @@
+ {
+  "createdAt": "2025-08-30T18:16:52.993Z",
+  "updatedAt": "2025-09-08T07:19:59.000Z",
+  "id": "EWdLO0tfHf5yUjoz",
+  "name": "n8n_backup",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b7faf33a-08c6-418e-ae2d-7659e647e75a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "filters": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        420,
+        -40
+      ],
+      "id": "4c92064a-7a43-4fd4-97f7-952a306c80b9",
+      "name": "n8n",
+      "credentials": {
+        "n8nApi": {
+          "id": "sRq8yHys2tXpQKQA",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "06d86d49-4162-4157-a70d-930ae03294f2",
+              "name": "folderName",
+              "value": "=Backup_{{$now.format(\"yyyy-MM-dd\")}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        -40
+      ],
+      "id": "dc1d1cd1-4d19-4b57-966b-93cbe3ce592f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        640,
+        -40
+      ],
+      "id": "4d1b3932-89fc-466d-ac2a-a3beb8fbc012",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "70b16f4e-6329-46b2-af2b-1c0647c612f7",
+              "name": "nodes",
+              "value": "= {{JSON.stringify( $json,null,2) }}",
+              "type": "string"
+            },
+            {
+              "id": "a5be5b5b-3ac4-4d38-aa99-65d377d4eb2d",
+              "name": "fileName",
+              "value": "={{ $json.name }}.json",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        860,
+        60
+      ],
+      "id": "a2d1a494-5754-494d-9e0c-2f8e1a5e8911",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "nodes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1080,
+        60
+      ],
+      "id": "8fec2168-ed70-48ae-ae2c-2ec9e0b866c7",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "hrishi1515",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "n8n-backup",
+          "mode": "list",
+          "cachedResultName": "n8n-backup",
+          "cachedResultUrl": "https://github.com/hrishi1515/n8n-backup"
+        },
+        "filePath": "={{ $('Edit Fields').item.json.folderName }}/{{ $('Edit Fields1').item.json.fileName }}",
+        "binaryData": true,
+        "commitMessage": "upload completed "
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        1300,
+        60
+      ],
+      "id": "3a71a09c-df51-4cda-8c0e-1aeca0d3930b",
+      "name": "GitHub",
+      "webhookId": "89b9daa6-a24b-4a04-8182-7e8d25ca90b8",
+      "credentials": {
+        "githubApi": {
+          "id": "vyBfk129Je3dZp3k",
+          "name": "GitHub account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "5d6d0fa9-f9d0-498a-9ecb-dda1393f2fd2",
+  "triggerCount": 0,
+  "tags": []
+}
