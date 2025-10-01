@@ -1,0 +1,206 @@
+ {
+  "createdAt": "2025-06-22T13:41:18.200Z",
+  "updatedAt": "2025-06-22T13:45:14.000Z",
+  "id": "LsCqoSW8gvBWphDu",
+  "name": "My workflow 23",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "audio-transcription",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "8777d07a-3e13-4fdd-b05f-984c7d7a2600",
+      "name": "Webhook - Audio Upload",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        -440,
+        60
+      ],
+      "webhookId": "f74eed75-6b12-44f8-8a1d-e7cab0c22693"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check_file",
+              "leftValue": "={{ $json.body.audioFile ? true : false }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ad74ee41-5f8b-47cf-b62e-25f37cba0f03",
+      "name": "Check if Audio File Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "jsonToBinary",
+        "convertAllData": false,
+        "sourceKey": "body.audioFile.data",
+        "destinationKey": "audioFile",
+        "options": {
+          "fileName": "={{ $json.body.audioFile.fileName }}",
+          "mimeType": "={{ $json.body.audioFile.mimeType }}"
+        }
+      },
+      "id": "e79e29a7-6893-4015-8188-27c6c6494e01",
+      "name": "Convert to Binary",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "requestOptions": {}
+      },
+      "id": "a5ba100f-4d57-4339-a28f-32c4cbbfd1a6",
+      "name": "OpenAI Whisper Transcription",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -40
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format the transcription response\nreturn [\n  {\n    json: {\n      transcription: $input.first().json.text,\n      status: \"success\",\n      timestamp: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "id": "b9362b2d-2b1a-4ead-bf14-3ff5cdda096c",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        360,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Return error response\nreturn [\n  {\n    json: {\n      error: \"No audio file received\",\n      status: \"error\",\n      timestamp: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "id": "50d1478b-f330-4a0b-9b85-a996396f492b",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        160
+      ]
+    }
+  ],
+  "connections": {
+    "Check if Audio File Exists": {
+      "main": [
+        [
+          {
+            "node": "Convert to Binary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Audio Upload": {
+      "main": [
+        [
+          {
+            "node": "Check if Audio File Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Binary": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Whisper Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Whisper Transcription": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "3caf68ef-bc1c-4f28-9307-e591d47e1fef",
+  "triggerCount": 1,
+  "tags": []
+}
