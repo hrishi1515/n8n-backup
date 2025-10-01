@@ -1,0 +1,1279 @@
+ {
+  "createdAt": "2025-09-25T07:57:39.412Z",
+  "updatedAt": "2025-09-29T15:05:02.000Z",
+  "id": "1oUCYLZaAHut4o7P",
+  "name": "My workflow 42",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "id": "aab40b4a-2282-48d6-8ce7-4888d22ac8fa",
+      "name": "Chat Webhook Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1680,
+        -1000
+      ],
+      "webhookId": "enhanced-kbl-chatbot"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "extract-user-input",
+              "name": "userMessage",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "extract-session-id",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId || 'default_session' }}",
+              "type": "string"
+            },
+            {
+              "id": "extract-sender",
+              "name": "sender",
+              "value": "={{ $json?.sender || $json?.body?.sender || 'user' }}",
+              "type": "string"
+            },
+            {
+              "id": "extract-user-id",
+              "name": "userId",
+              "value": "={{ $json?.userId || $json?.body?.userId || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "42d59099-745a-485b-9a2a-a11a5abbffa0",
+      "name": "Extract Input Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1520,
+        -1000
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userMessage }}"
+      },
+      "id": "2fd52571-1f29-4f93-bdac-96e7522cec0e",
+      "name": "OpenAI Intent Classifier",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        -1340,
+        -1000
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "908491e1-471b-4736-be05-c75b5107acb7",
+      "name": "OpenAI Model for Intent",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -1300,
+        -800
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process OpenAI response and format for routing\nconst userMessage = $('Extract Input Fields').first().json.userMessage;\nconst sessionId = $('Extract Input Fields').first().json.sessionId;\n\n// Handle LangChain response format\nconst openAiResponse = $input.first().json.output || $input.first().json.text || $input.first().json.response || '';\n\n// Clean and validate the intent\nconst detectedIntent = openAiResponse.trim().toLowerCase().replace(/[\"']/g, '');\n\n// Valid intents list for validation\nconst validIntents = [\n  'product_search', 'product_info', 'authentication', 'order_list', \n  'order_details', 'cart', 'help_agent', 'contact_info', 'general_query'\n];\n\n// Validate intent, fallback to general_query if invalid\nconst finalIntent = validIntents.includes(detectedIntent) ? detectedIntent : 'general_query';\n\nreturn {\n  json: {\n    userMessage,\n    sessionId,\n    detectedIntent: finalIntent,\n    originalResponse: openAiResponse,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "396ae80e-eabd-4564-b0ac-13b1fb6a3ce9",
+      "name": "Process Intent Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1000,
+        -1000
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7856fe5c-f8fa-4371-8be9-5b33c06ad3d0",
+      "name": "Intent Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -880,
+        -1000
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Global Settings').first().json.magento_graphql_url }}",
+        "authentication": "genericCredentials",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "query { categories { items { id name path children { id name path } } } }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "01d5d69e-d6fd-4645-9e75-5323fce85bc3",
+      "name": "Fetch Categories",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -780,
+        -1200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format categories for user selection\nconst categories = $input.first().json.data?.categories?.items || [];\nconst userMessage = $('Intent Classifier').first().json.userMessage;\n\n// Create category buttons\nconst categoryButtons = categories.slice(0, 6).map(cat => ({\n  type: \"postback\",\n  title: cat.name,\n  payload: `category_${cat.id}_${cat.name}`\n}));\n\n// Generate response based on user query\nlet responseText = \"What type of pump are you looking for?\";\n\nif (userMessage.includes('gardening')) {\n  responseText = \"Great! I can help you find gardening pumps. Here are the available categories:\";\n} else if (userMessage.includes('irrigation')) {\n  responseText = \"Perfect for irrigation needs! Here are our pump categories:\";\n} else if (userMessage.includes('commercial') || userMessage.includes('industrial')) {\n  responseText = \"For commercial & industrial use, here are our pump categories:\";\n}\n\nreturn {\n  json: {\n    text: responseText,\n    buttons: categoryButtons,\n    quickReplies: [\n      { content_type: \"text\", title: \"All Categories\", payload: \"show_all_categories\" },\n      { content_type: \"text\", title: \"Price Range\", payload: \"price_filter\" }\n    ],\n    type: 'category_selection'\n  }\n};"
+      },
+      "id": "ec8c2de8-0990-4779-a04a-b689aa8c3ebc",
+      "name": "Format Category Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        -1200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Global Settings').first().json.magento_graphql_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "query getProducts($filter: ProductAttributeFilterInput, $pageSize: Int, $currentPage: Int) { products(filter: $filter, pageSize: $pageSize, currentPage: $currentPage) { items { id name sku price_range { minimum_price { final_price { value currency } } } small_image { url } url_key short_description { html } } page_info { current_page total_pages } total_count } }"
+            },
+            {
+              "name": "variables",
+              "value": "={{ { \"filter\": { \"category_id\": { \"eq\": $json.categoryId } }, \"pageSize\": 6, \"currentPage\": 1 } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4b2a9f2f-aecc-421d-aee6-c4b67aa19d02",
+      "name": "Fetch Products by Category",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -780,
+        -900
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format products as cards with buttons\nconst products = $input.first().json.data?.products?.items || [];\n\nconst productCards = products.map(product => ({\n  type: \"card\",\n  title: product.name,\n  subtitle: `₹${product.price_range.minimum_price.final_price.value} ${product.price_range.minimum_price.final_price.currency}`,\n  image: product.small_image?.url || '',\n  description: product.short_description?.html?.replace(/<[^>]*>/g, '').substring(0, 100) + '...',\n  buttons: [\n    {\n      type: \"postback\",\n      title: \"View Details\",\n      payload: `view_product_${product.id}`\n    },\n    {\n      type: \"postback\", \n      title: \"Add to Cart\",\n      payload: `add_to_cart_${product.id}`\n    }\n  ],\n  url: product.url_key\n}));\n\nreturn {\n  json: {\n    text: `Found ${products.length} pumps for you:`,\n    cards: productCards,\n    attachment: {\n      type: \"template\",\n      payload: {\n        template_type: \"generic\",\n        elements: productCards\n      }\n    },\n    quickReplies: [\n      { content_type: \"text\", title: \"Show More\", payload: \"load_more_products\" },\n      { content_type: \"text\", title: \"Filter by Price\", payload: \"price_filter\" }\n    ]\n  }\n};"
+      },
+      "id": "e62865aa-8171-4deb-bad5-0e14fa092aa3",
+      "name": "Format Product Cards",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        -900
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cc31d10e-df29-423f-875a-68268ab68ffe",
+      "name": "Authentication & Order Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -1080,
+        -700
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT token, mobile, expires_at FROM user_sessions WHERE session_id = $1 AND expires_at > NOW()",
+        "options": {
+          "queryReplacement": "={{ [$json.sessionId] }}"
+        }
+      },
+      "id": "7b57bee5-b077-4ec1-a961-e44b2eae0b8c",
+      "name": "Check User Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -780,
+        -700
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "session-exists",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "900710cc-6729-4d7b-85cf-36449d7d70e7",
+      "name": "Session Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        -800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Request mobile number for authentication\nreturn {\n  json: {\n    text: \"To access your orders and account information, please provide your mobile number:\",\n    inputType: \"phone\",\n    buttons: [\n      {\n        type: \"postback\",\n        title: \"Enter Mobile\", \n        payload: \"request_mobile\"\n      }\n    ],\n    expectedResponse: \"mobile_number\"\n  }\n};"
+      },
+      "id": "f255e550-e985-4455-9eae-2c2bbb739845",
+      "name": "Request Mobile Number",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -380,
+        -900
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Global Settings').first().json.auth_api_url }}/send-otp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "mobile",
+              "value": "={{ $json.mobile }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ee4a953b-6f8c-48f3-a39d-241d5e1b16ef",
+      "name": "Send OTP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        -900
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Global Settings').first().json.auth_api_url }}/verify-otp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "mobile",
+              "value": "={{ $json.mobile }}"
+            },
+            {
+              "name": "otp",
+              "value": "={{ $json.otp }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2b54bb20-3bf0-45c0-b1f6-ab50f127c18b",
+      "name": "Verify OTP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        20,
+        -900
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO user_sessions (session_id, token, mobile, expires_at) VALUES ($1, $2, $3, $4) ON CONFLICT (session_id) DO UPDATE SET token = $2, mobile = $3, expires_at = $4",
+        "options": {
+          "queryReplacement": "={{ [$json.sessionId, $json.access_token, $json.mobile, new Date(Date.now() + 24*60*60*1000).toISOString()] }}"
+        }
+      },
+      "id": "00d7b85e-dfa5-4e08-b9d0-56009ad25084",
+      "name": "Store User Session",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        220,
+        -900
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Global Settings').first().json.magento_graphql_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "query getCustomerOrders($pageSize: Int, $currentPage: Int) { customer { orders(pageSize: $pageSize, currentPage: $currentPage) { items { id number order_date status total { grand_total { value currency } } } page_info { current_page total_pages } } } }"
+            },
+            {
+              "name": "variables",
+              "value": "={{ { \"pageSize\": 10, \"currentPage\": 1 } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "90b9b0ba-506b-4b4c-aa70-17fb0ef1cfde",
+      "name": "Fetch User Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -580,
+        -600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format orders list\nconst orders = $input.first().json.data?.customer?.orders?.items || [];\n\nif (orders.length === 0) {\n  return {\n    json: {\n      text: \"You don't have any orders yet. Browse our pumps to place your first order!\",\n      buttons: [\n        {\n          type: \"postback\",\n          title: \"Browse Pumps\",\n          payload: \"browse_products\"\n        }\n      ]\n    }\n  };\n}\n\nconst orderList = orders.map((order, index) => \n  `${index + 1}. Order #${order.number}\\n` +\n  `📅 Date: ${new Date(order.order_date).toLocaleDateString()}\\n` +\n  `💰 Total: ${order.total.grand_total.currency} ${order.total.grand_total.value}\\n` +\n  `📊 Status: ${order.status}\\n`\n).join('\\n---\\n');\n\nconst orderButtons = orders.slice(0, 3).map(order => ({\n  type: \"postback\",\n  title: `Order #${order.number}`,\n  payload: `order_details_${order.id}`\n}));\n\nreturn {\n  json: {\n    text: `📦 Your Recent Orders:\\n\\n${orderList}`,\n    buttons: orderButtons.concat([\n      {\n        type: \"postback\",\n        title: \"View All Orders\",\n        payload: \"view_all_orders\"\n      }\n    ])\n  }\n};"
+      },
+      "id": "4541c8c2-f15c-43e3-8a7f-c82cbad5ee07",
+      "name": "Format Orders List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -380,
+        -600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Global Settings').first().json.magento_graphql_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "query getOrderDetails($orderId: String!) { customer { orders(filter: {number: {eq: $orderId}}) { items { id number order_date status total { grand_total { value currency } } shipping_address { firstname lastname street telephone city region { label } postcode country_code } items { id product_name product_sku quantity_ordered product_sale_price { value currency } } } } } }"
+            },
+            {
+              "name": "variables",
+              "value": "={{ { \"orderId\": $json.orderId } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0214bb2b-652c-4757-86bb-c2bd6888c865",
+      "name": "Fetch Order Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -580,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Global Settings').first().json.magento_graphql_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $json.token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "mutation addProductToCart($cartId: String!, $cartItems: [CartItemInput!]!) { addProductsToCart(cartId: $cartId, cartItems: $cartItems) { cart { id items { id product { name sku } quantity } } } }"
+            },
+            {
+              "name": "variables",
+              "value": "={{ { \"cartId\": $json.cartId, \"cartItems\": [{ \"sku\": $json.productSku, \"quantity\": 1 }] } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "736c6fd7-f298-4d9f-bfe5-275fcde0deb9",
+      "name": "Add to Cart",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -780,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1c5220da-2559-42a6-a33f-99413ff19e95",
+      "name": "Help & Contact Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -1080,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Global Settings').first().json.ticket_api_url }}/create-ticket",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_details",
+              "value": "={{ { \"sessionId\": $json.sessionId, \"mobile\": $json.mobile || 'Not provided' } }}"
+            },
+            {
+              "name": "query",
+              "value": "={{ $json.userMessage }}"
+            },
+            {
+              "name": "source",
+              "value": "chatbot"
+            },
+            {
+              "name": "priority",
+              "value": "medium"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3967c232-fae2-4202-86c1-34cca6111656",
+      "name": "Create Support Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -780,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format contact information response\nconst ticketNumber = $input.first().json.ticket_number;\n\nreturn {\n  json: {\n    text: `🎫 Support ticket created successfully!\\n\\nTicket Number: #${ticketNumber}\\n\\nOur team will contact you soon. You can also reach us directly:\\n\\n📞 Toll-Free: 1800-123-4443\\n📧 Email: support@kirloskarpumps.com\\n\\n🏢 Office Address:\\nKirloskar Brothers Limited\\nYamuna, S.No.98(3 to 7), Plot No.3,\\nBaner, Pune 411045, Maharashtra, INDIA\\n\\n🌐 Website: https://www.kirloskarpumps.com`,\n    buttons: [\n      {\n        type: \"web_url\",\n        title: \"Visit Website\",\n        url: \"https://www.kirloskarpumps.com\"\n      },\n      {\n        type: \"postback\",\n        title: \"Talk to Agent\",\n        payload: \"connect_human_agent\"\n      }\n    ]\n  }\n};"
+      },
+      "id": "00da589a-c499-4552-86f1-be5f6276f8e7",
+      "name": "Format Contact Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Just provide contact info without creating ticket\nreturn {\n  json: {\n    text: `📞 Kirloskar Brothers Limited - Contact Information\\n\\n📞 Toll-Free: 1800-123-4443\\n📧 Email: support@kirloskarpumps.com\\n\\n🏢 Office Address:\\nKirloskar Brothers Limited\\nYamuna, S.No.98(3 to 7), Plot No.3,\\nBaner, Pune 411045, Maharashtra, INDIA\\n\\n🌐 Website: https://www.kirloskarpumps.com\\n\\n🕒 Business Hours: 9:00 AM - 6:00 PM (Mon-Sat)\",\n    buttons: [\n      {\n        type: \"web_url\",\n        title: \"Visit Website\",\n        url: \"https://www.kirloskarpumps.com\"\n      },\n      {\n        type: \"postback\",\n        title: \"Create Support Ticket\",\n        payload: \"create_ticket\"\n      }\n    ]\n  }\n};"
+      },
+      "id": "528e522f-8402-4298-a267-c4d30af41b5a",
+      "name": "Contact Info Only",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f5f84a07-c254-45a3-99bb-dc6a79332edb",
+      "name": "RAG Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -1080,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userMessage }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a specialized assistant for Kirloskar Brothers Limited (KBL) water pumps. Help users with product information, specifications, applications, and technical queries. Use the available tools to search for relevant information.\\n\\nWhen users ask about product specifications like warranty, horse power, technical details, or manuals:\\n1. Use RAG search to find relevant documentation\\n2. Use SQL queries for structured product data\\n3. Provide specific, accurate information\\n4. Include product links when available\\n\\nFor general queries about pump applications, use RAG to provide comprehensive information from the knowledge base.\\n\\nIf you cannot find specific information, direct users to contact support with the toll-free number: 1800-123-4443"
+        }
+      },
+      "id": "401a20fc-bfdb-422d-9c11-a11940db2635",
+      "name": "Enhanced RAG Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -780,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "59dcb7ba-8354-4a9e-94e5-ca2751bcf88d",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -980,
+        100
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "e9eb417b-505f-40b3-9697-6de36774b5d0",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        -820,
+        120
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to fetch all available documents and their schema information for CSV/Excel files.",
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "document_metadata",
+          "mode": "list"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        -660,
+        200
+      ],
+      "id": "da50e12d-e28e-4eca-82d5-9924a8fa4c8c",
+      "name": "List Documents Tool",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Given a file ID, fetches the complete text content from the document.",
+        "operation": "executeQuery",
+        "query": "SELECT string_agg(content, ' ') as document_text FROM documents WHERE metadata->>'file_id' = $1 GROUP BY metadata->>'file_id';",
+        "options": {
+          "queryReplacement": "={{ $fromAI('file_id') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        -280,
+        200
+      ],
+      "id": "84a9abfd-4921-49fb-b137-2d3a5371cb22",
+      "name": "Get File Contents Tool",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Enhanced SQL query tool for searching product information. Use this for price filtering, category-based searches, and specific product lookups.",
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('sql_query') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        100,
+        200
+      ],
+      "id": "b14f7b28-3cb7-4aa2-8ac5-bc4f029d3a57",
+      "name": "Enhanced Query Document Rows",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "documents",
+        "toolDescription": "Use RAG to look up information in the knowledgebase about pumps, applications, specifications, and technical details.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        480,
+        100
+      ],
+      "id": "fbf71d0b-6fa2-47fc-b706-7f898fadedcd",
+      "name": "Supabase Vector Store"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        700,
+        200
+      ],
+      "id": "954a9710-8a84-4fe8-b53f-28857d6f3e5d",
+      "name": "OpenAI Embeddings"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Global configuration settings\nreturn {\n  json: {\n    magento_graphql_url: 'https://your-magento-domain.com/graphql',\n    auth_api_url: 'https://your-auth-api.com',\n    ticket_api_url: 'https://your-ticket-system.com/api',\n    company_info: {\n      name: 'Kirloskar Brothers Limited',\n      phone: '1800-123-4443',\n      email: 'support@kirloskarpumps.com',\n      address: 'Yamuna, S.No.98(3 to 7), Plot No.3, Baner, Pune 411045, Maharashtra, INDIA',\n      website: 'https://www.kirloskarpumps.com'\n    }\n  }\n};"
+      },
+      "id": "657d3bb9-07de-44d3-a9b8-64cd812b6b60",
+      "name": "Global Settings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        -1300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge all responses and format final output\nconst inputData = $input.all();\nlet finalResponse = {};\n\n// Find the response from any of the processing paths\nfor (const item of inputData) {\n  if (item.json.text || item.json.cards || item.json.buttons) {\n    finalResponse = item.json;\n    break;\n  }\n}\n\n// Add metadata\nfinalResponse.sessionId = $('Intent Classifier').first().json.sessionId;\nfinalResponse.timestamp = new Date().toISOString();\nfinalResponse.source = 'enhanced_kbl_chatbot';\n\nreturn { json: finalResponse };"
+      },
+      "id": "2700f856-6467-46d8-9a20-864348fd7cbb",
+      "name": "Response Formatter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        -1000
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e0d7f71b-a664-4854-ba6c-915318c35c55",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        -1000
+      ]
+    }
+  ],
+  "connections": {
+    "Chat Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Input Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Input Fields": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Intent Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Intent Classifier": {
+      "main": [
+        [
+          {
+            "node": "Process Intent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model for Intent": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "OpenAI Intent Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Intent Response": {
+      "main": [
+        [
+          {
+            "node": "Intent Router",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Authentication & Order Router",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Help & Contact Router",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RAG Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Fetch Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Categories": {
+      "main": [
+        [
+          {
+            "node": "Format Category Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Category Response": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authentication & Order Router": {
+      "main": [
+        [
+          {
+            "node": "Check User Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check User Session": {
+      "main": [
+        [
+          {
+            "node": "Session Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Exists?": {
+      "main": [
+        [
+          {
+            "node": "Fetch User Orders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request Mobile Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Mobile Number": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch User Orders": {
+      "main": [
+        [
+          {
+            "node": "Format Orders List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Orders List": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Help & Contact Router": {
+      "main": [
+        [
+          {
+            "node": "Create Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "Format Contact Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Contact Response": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Info Only": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Router": {
+      "main": [
+        [
+          {
+            "node": "Enhanced RAG Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced RAG Agent": {
+      "main": [
+        [
+          {
+            "node": "Response Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Enhanced RAG Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Enhanced RAG Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Documents Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Enhanced RAG Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File Contents Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Enhanced RAG Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Query Document Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "Enhanced RAG Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Enhanced RAG Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Formatter": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "64a083db-da58-4d45-b5e2-bbb34386fba1",
+  "triggerCount": 0,
+  "tags": []
+}
