@@ -1,0 +1,100 @@
+ {
+  "createdAt": "2025-05-09T16:00:10.602Z",
+  "updatedAt": "2025-05-09T16:00:10.000Z",
+  "id": "hK28KJSgQ2eB6xET",
+  "name": "My workflow 8",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -180
+      ],
+      "id": "7efdc599-1214-4110-9a1e-1d42f4e475ca",
+      "name": "When chat message received",
+      "webhookId": "b826eb73-4994-4a2b-8a5d-7d9f39e1f19c"
+    },
+    {
+      "parameters": {
+        "operation": "decode",
+        "token": "123",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.jwt",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        -180
+      ],
+      "id": "5a1ab819-0ddd-4c30-9dc7-a258c2c3d3ac",
+      "name": "JWT",
+      "credentials": {
+        "jwtAuth": {
+          "id": "eJYB3xY7XfVimJkz",
+          "name": "JWT Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "document_rows"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        40,
+        -180
+      ],
+      "id": "3ee2a403-53f1-46f9-b4cc-3e7ef9c3d5da",
+      "name": "Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "e7A13j05yIr5nwyM",
+          "name": "Supabase account 2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "JWT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JWT": {
+      "main": [
+        [
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "fec08c02-1f79-466c-a548-ca0bf8810afb",
+  "triggerCount": 0,
+  "tags": []
+}
