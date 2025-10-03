@@ -1,0 +1,278 @@
+ {
+  "createdAt": "2025-06-03T12:34:42.195Z",
+  "updatedAt": "2025-06-03T12:36:49.000Z",
+  "id": "sKEbrNDqMhy1VonD",
+  "name": "My workflow 11",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an expert webscraping agent that has an access to Bright Data's Web Unlocker API which will enable you to complete specefic set of actions and have access to key tools. When you are executing the tool you must share across the exact name of the tool for it to be executed.\nfor example :- \"Search Engine Scraping\" should be \"search_engine\" \n\nToday is {{$now.format('cccc')}} the {{$now.format('yyyy-MM-dd HH:mm')}}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "ce81379d-0df9-4e4b-a95e-2681e4a93bf4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        220
+      ],
+      "id": "bec32d4b-7239-48aa-988f-d3a73ad8ef70",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        340,
+        220
+      ],
+      "id": "5925f2ec-3958-4af8-b6ff-93c64298411e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        220
+      ],
+      "id": "7f31209e-09c5-4d90-9d7f-aea38fe7e038",
+      "name": "MCP Client",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "$fromAI('toolname', 'Select exactly one tool name from the following list that best fits the user\\'s request. Only return the tool name, no extra text:\\n\\nsearch_engine, scrape_as_markdown, scrape_as_html, session_stats, web_data_amazon_product, web_data_amazon_product_reviews, web_data_amazon_product_search, web_data_walmart_product, web_data_walmart_seller, web_data_ebay_product, web_data_homedepot_products, web_data_zara_products, web_data_etsy_products, web_data_bestbuy_products, web_data_linkedin_person_profile, web_data_linkedin_company_profile, web_data_linkedin_job_listings, web_data_linkedin_posts, web_data_linkedin_people_search, web_data_crunchbase_company, web_data_zoominfo_company_profile, web_data_instagram_profiles, web_data_instagram_posts, web_data_instagram_reels, web_data_instagram_comments, web_data_facebook_posts, web_data_facebook_marketplace_listings, web_data_facebook_company_reviews, web_data_facebook_events, web_data_tiktok_profiles, web_data_tiktok_posts, web_data_tiktok_shop, web_data_tiktok_comments, web_data_google_maps_reviews, web_data_google_shopping, web_data_google_play_store, web_data_apple_app_store, web_data_reuter_news, web_data_github_repository_file, web_data_yahoo_finance_business, web_data_x_posts, web_data_zillow_properties_listing, web_data_booking_hotel_listings, web_data_youtube_profiles, web_data_youtube_comments, web_data_reddit_posts, web_data_youtube_videos, scraping_browser_activation_instructions', 'string')",
+        "toolParameters": "={\n  \"query\": \"{{ $json.chatInput }}\",\n  \"engine\": \"{{ $fromAI('searchengine', 'Choose only between \\\"google\\\" or \\\"bing\\\" based on what is more suitable for the user\\'s query. Return only \\\"google\\\" or \\\"bing\\\".', 'string') }}\"\n}\n\n"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        160
+      ],
+      "id": "fc70c78f-3c41-460b-9460-12ab21750d6f",
+      "name": "Execute Tool",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "iiIT9A0MiVVJfXp7",
+          "name": "MCP Client (STDIO) account 2"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        540,
+        200
+      ],
+      "id": "b6d37b6f-8824-4b84-9782-10a92af14269",
+      "name": "list out all the tools",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "iiIT9A0MiVVJfXp7",
+          "name": "MCP Client (STDIO) account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "search_engine",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        680,
+        240
+      ],
+      "id": "4bc8a567-9748-4b3f-8638-1c53b02d00c2",
+      "name": "MCP Client1",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "gmXDG4bmY4wSpZg6",
+          "name": "MCP Client (STDIO) account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "=web_data_amazon_product",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        820,
+        240
+      ],
+      "id": "10e71d0b-c3e9-420e-9692-dafb00809963",
+      "name": "MCP Client2",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "gmXDG4bmY4wSpZg6",
+          "name": "MCP Client (STDIO) account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeTool",
+        "toolName": "scrape_as_markdown",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        220
+      ],
+      "id": "1242b78a-08de-4b31-8a29-d78c747d1ee7",
+      "name": "MCP Client3",
+      "credentials": {
+        "mcpClientApi": {
+          "id": "gmXDG4bmY4wSpZg6",
+          "name": "MCP Client (STDIO) account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        -20
+      ],
+      "id": "8a0f996c-54db-4a57-8e76-e8ede64154f0",
+      "name": "When chat message received",
+      "webhookId": "a9af7883-e9db-4da1-803e-da29c61d3f5c"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list out all the tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client3": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "8d307136-fac5-412e-a844-41b5a96ebaf5",
+  "triggerCount": 0,
+  "tags": []
+}
