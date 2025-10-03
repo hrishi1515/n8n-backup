@@ -1,0 +1,526 @@
+ {
+  "createdAt": "2025-07-15T10:48:59.495Z",
+  "updatedAt": "2025-07-23T07:12:42.000Z",
+  "id": "HxpmtONVhqgvjYHz",
+  "name": "KBL Chatbot copy 3",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "4198a409-5fb8-4115-ba07-268ba01abcd6",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        200
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "1f46c7dc-03ce-46e5-8359-689d5ba70f34",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        120,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f3347138-2cf2-4eb5-a641-23a45005d8b6",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "71770507-9198-47be-b768-745d06742e7e",
+      "name": "Respond to Webhook Human",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a9a245e-f1a1-4282-bb02-a81ffe629f0f",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "b80831d8-c653-4203-8706-adedfdb98f77",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            },
+            {
+              "id": "c80831d8-c653-4203-8706-adedfdb98f88",
+              "name": "sender",
+              "value": "={{ $json?.sender || $json?.body?.sender || 'user' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ad5c5296-2f58-4e9f-9ac4-463ca257ea3c",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -120,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+              "leftValue": "={{ $json.sender }}",
+              "rightValue": "human_agent",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "254c7d23-0cc6-4cd4-836a-7a78a4fcdf35",
+      "name": "Check Sender Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        40,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a specialized assistant for retrieving information about pumps from the company named  KBL."
+        }
+      },
+      "id": "bfdad8e6-fcfc-4dc7-aace-ecc4671d4853",
+      "name": "RAG AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        300,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Store messages and return data\nWITH inserted AS (\n  INSERT INTO n8n_chat_histories (session_id, message, created_at, sender_type) \n  VALUES \n    ($1, $2, NOW(), 'user'),\n    ($1, $3, NOW(), 'human_agent')\n  RETURNING 1\n)\nSELECT \n  $4::text as \"chatInput\",\n  $1::text as \"sessionId\",\n  'human_agent'::text as \"sender\";",
+        "options": {
+          "queryReplacement": "={{ [$json.sessionId, JSON.stringify({role: 'user', content: $json.chatInput}), JSON.stringify({role: 'assistant', content: $json.chatInput}), $json.chatInput] }}"
+        }
+      },
+      "id": "f7582f4c-9db3-48a1-8a03-232fe00b76c1",
+      "name": "Store Human Agent Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        300,
+        -80
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all input data\nconst data = $input.first().json;\n\n// Log for debugging\nconsole.log('Human Agent Input:', JSON.stringify(data, null, 2));\n\n// Get the message - check all possible field names\nconst message = data.chatInput || data.chatinput || data.message || \"No message\";\nconst sessionId = data.sessionId || data.sessionid || data.session_id || \"no-session\";\n\n// Create response matching AI agent format\nconst response = {\n  output: message\n};\n\nconsole.log('Human Agent Output:', JSON.stringify(response, null, 2));\n\n// Return in the exact format\nreturn [{\n  json: response\n}];"
+      },
+      "id": "3a679bf2-eb12-4fba-9498-6f278bf699d0",
+      "name": "Format Human Agent Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log what AI Agent returns\nconst aiResponse = $input.first().json;\nconsole.log('AI Agent Output:', JSON.stringify(aiResponse, null, 2));\n\n// Pass through unchanged\nreturn [{\n  json: aiResponse\n}];"
+      },
+      "id": "232af6e3-2557-4bf5-8b3a-6b5514383632",
+      "name": "Log AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to fetch all available documents, including the table schema if the file is a CSV or Excel file.",
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "document_metadata",
+          "mode": "list",
+          "cachedResultName": "document_metadata"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        360,
+        260
+      ],
+      "id": "7efd1382-28a6-40b3-b20a-654dd2a6a236",
+      "name": "List Documents",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Given a file ID, fetches the text from the document.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    string_agg(content, ' ') as document_text\nFROM documents\n  WHERE metadata->>'file_id' = $1\nGROUP BY metadata->>'file_id';",
+        "options": {
+          "queryReplacement": "={{ $fromAI('file_id') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        560,
+        260
+      ],
+      "id": "c793f22c-3c9e-4447-9575-6ceda45a0e90",
+      "name": "Get File Contents",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "SQL Query Generator",
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('sql_query') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        740,
+        260
+      ],
+      "id": "004acd20-37e5-4054-8b1f-0829faad92e6",
+      "name": "Query Document Rows",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "documents",
+        "toolDescription": "Use RAG to look up information in the knowledgebase.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        960,
+        0
+      ],
+      "id": "2d09997d-a4f5-4331-af4f-01fb88881b4c",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "e7A13j05yIr5nwyM",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1060,
+        200
+      ],
+      "id": "d2cdc211-a6e0-438c-82cc-d4c2346fd161",
+      "name": "Embeddings OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -280,
+        -20
+      ],
+      "id": "7f05cea4-d708-4ad4-ae1f-65c3a63ec491",
+      "name": "When chat message received",
+      "webhookId": "92a09f87-741f-4b6f-bf60-f0cc4fce005b"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Check Sender Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Sender Type": {
+      "main": [
+        [
+          {
+            "node": "Store Human Agent Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Log AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log AI Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Human Agent Message": {
+      "main": [
+        [
+          {
+            "node": "Format Human Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Human Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Documents": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File Contents": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Document Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "4d1f2bc5-183c-4ddc-ac16-14e175c33dd0",
+  "triggerCount": 1,
+  "tags": []
+}
