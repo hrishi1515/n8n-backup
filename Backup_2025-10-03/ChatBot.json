@@ -1,0 +1,554 @@
+ {
+  "createdAt": "2025-06-03T17:00:03.400Z",
+  "updatedAt": "2025-07-23T07:12:58.000Z",
+  "id": "6dSaTQlvyiR8yWZv",
+  "name": "ChatBot",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/support-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "efa39984-7d27-4eca-a453-c46a967f5587",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1400,
+        -420
+      ],
+      "webhookId": "support-agent-webhook"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "You are a helpful customer support agent for Kirloskar Pumps. You can help customers with:\n1. Product inquiries and recommendations\n2. Order history and details\n3. General customer support\n\nContact Information:\n- Toll-Free: 1800-123-4443\n- Address: Kirloskar Brothers Limited, S.No.98(3 to 7), Plot No.3, Baner, Pune 411045, Maharashtra, INDIA\n- Website: https://www.kirloskarpumps.com\n\nUse the available tools to help customers with their queries."
+        }
+      },
+      "id": "dae8149d-3eb1-49a6-ac70-b0255b950042",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "067b567b-428e-4043-8d69-a39ffc029321",
+      "name": "Tool Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -200,
+        -340
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"query\": \"query { categories(filters: { name: { match: default } }) { items { id name url_key level children_count children { id name url_key level } } } }\"\n}",
+        "options": {}
+      },
+      "id": "62abce1e-3d9e-4f3b-8c2a-291574477e6d",
+      "name": "Get Categories API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -360,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "e8622bec-fd6c-427b-8439-6c81b70f2f58",
+      "name": "Get Products API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1080,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "e810ab3b-77a4-40b1-82cf-4c5cef5df5b7",
+      "name": "Authenticate Customer API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -680,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"Content-Type\": \"application/json\",\n  \"Authorization\": \"Bearer {{ $json.token }}\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "ed6170c9-5878-4e46-94eb-a75fcd21473d",
+      "name": "Get Order History API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -580,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"Content-Type\": \"application/json\",\n  \"Authorization\": \"Bearer {{ $json.token }}\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "877ae476-0394-4c7c-9b99-4a05c555dab4",
+      "name": "Get Order Details API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -280,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Categories Response\nconst response = $input.first();\nconst categories = response.json.data?.categories?.items || [];\n\n// Format categories for AI agent\nconst formattedCategories = categories.map(cat => ({\n  id: cat.id,\n  name: cat.name,\n  url_key: cat.url_key,\n  level: cat.level,\n  children_count: cat.children_count,\n  children: cat.children || []\n}));\n\nreturn {\n  success: true,\n  data: formattedCategories[0],\n  message: \"Categories fetched successfully\"\n};"
+      },
+      "id": "d03edd13-de90-41a4-95fc-fdd2533389c1",
+      "name": "Process Categories",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Products Response\nconst response = $input.first();\nconst products = response.json.data?.products || {};\n\n// Format products for AI agent\nconst formattedProducts = {\n  items: products.items?.map(product => ({\n    id: product.id,\n    name: product.name,\n    sku: product.sku,\n    price: product.price?.regularPrice?.amount?.value || 0,\n    currency: product.price?.regularPrice?.amount?.currency || 'INR',\n    image_url: product.small_image?.url || '',\n    url_key: product.url_key\n  })) || [],\n  total_count: products.total_count || 0\n};\n\nreturn {\n  success: true,\n  data: formattedProducts,\n  message: \"Products fetched successfully\"\n};"
+      },
+      "id": "5da016ff-fe92-4831-9804-a15ad0d4263b",
+      "name": "Process Products",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Authentication Response\nconst response = $input.first();\nconst authData = response.json.data?.generateCustomerToken || {};\n\nif (authData.token) {\n  return {\n    success: true,\n    data: {\n      token: authData.token,\n      authenticated: true\n    },\n    message: \"Customer authenticated successfully\"\n  };\n} else {\n  return {\n    success: false,\n    data: {\n      authenticated: false\n    },\n    message: \"Authentication failed. Please check your email and password.\"\n  };\n}"
+      },
+      "id": "9383cd19-fc07-475a-8630-a45c6a3ff4fa",
+      "name": "Process Authentication",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -340,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Order History Response\nconst response = $input.first();\nconst orderData = response.json.data?.customer?.orders || {};\n\n// Format orders for AI agent\nconst formattedOrders = {\n  items: orderData.items?.map(order => ({\n    id: order.id,\n    number: order.number,\n    order_date: order.order_date,\n    status: order.status,\n    grand_total: order.grand_total,\n    shipping_address: order.shipping_address,\n    items: order.items?.map(item => ({\n      product_name: item.product_name,\n      product_sku: item.product_sku\n    })) || []\n  })) || [],\n  page_info: orderData.page_info || {},\n  total_count: orderData.total_count || 0\n};\n\nreturn {\n  success: true,\n  data: formattedOrders,\n  message: \"Order history fetched successfully\"\n};"
+      },
+      "id": "f7f9223f-844a-401c-93a3-7e3e15edf3ff",
+      "name": "Process Order History",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process Order Details Response\nconst response = $input.first();\nconst orderDetails = response.json.data?.customer?.orders?.items?.[0] || {};\n\nif (Object.keys(orderDetails).length > 0) {\n  const formattedOrder = {\n    id: orderDetails.id,\n    number: orderDetails.number,\n    order_date: orderDetails.order_date,\n    status: orderDetails.status,\n    grand_total: orderDetails.grand_total,\n    shipping_address: orderDetails.shipping_address,\n    billing_address: orderDetails.billing_address,\n    items: orderDetails.items?.map(item => ({\n      product_name: item.product_name,\n      product_sku: item.product_sku\n    })) || [],\n    payment_methods: orderDetails.payment_methods || []\n  };\n\n  return {\n    success: true,\n    data: formattedOrder,\n    message: \"Order details fetched successfully\"\n  };\n} else {\n  return {\n    success: false,\n    data: {},\n    message: \"Order not found\"\n  };\n}"
+      },
+      "id": "addf0e6f-189f-401f-82b5-ce557de1b577",
+      "name": "Process Order Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"{{ $('AI Agent').item.json.output || 'Response generated successfully' }}\",\n  \"data\": {{ $('AI Agent').item.json.data || '{}' }},\n  \"timestamp\": \"{{ $now }}\"\n}",
+        "options": {}
+      },
+      "id": "ec692259-d909-4d77-aa2a-320d45c60593",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        520,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"{{ $json.error || 'An error occurred while processing your request' }}\",\n  \"timestamp\": \"{{ $now }}\"\n}",
+        "options": {}
+      },
+      "id": "8b4cbc11-1598-4387-8a20-e2775b99eff0",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        340,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input validation and preprocessing\nconst input = $input.first();\nconst body = input.json.body || {};\n\n// Validate required fields\nif (!body.message) {\n  throw new Error('Message field is required');\n}\n\n// Extract and clean the message\nconst userMessage = body.message.trim();\n\n// Prepare data for AI agent\nreturn {\n  message: userMessage,\n  timestamp: new Date().toISOString(),\n  user_id: body.user_id || 'anonymous',\n  session_id: body.session_id || Math.random().toString(36).substr(2, 9)\n};"
+      },
+      "id": "e6a67ce7-3db3-44de-88b1-2f8c441a1011",
+      "name": "Input Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1020,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f026a639-6f86-4802-87d5-fe92d445be46"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9beebb6f-329d-4586-96c5-6b026f8ed757",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        220,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -820,
+        -100
+      ],
+      "id": "7ed4bb28-02ef-4e04-9c9a-e5a40971ae56",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Input Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validation": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Tool Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool Router": {
+      "main": [
+        [
+          {
+            "node": "Get Categories API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Categories API": {
+      "main": [
+        [
+          {
+            "node": "Process Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Products API": {
+      "main": [
+        [
+          {
+            "node": "Process Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate Customer API": {
+      "main": [
+        [
+          {
+            "node": "Process Authentication",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order History API": {
+      "main": [
+        [
+          {
+            "node": "Process Order History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order Details API": {
+      "main": [
+        [
+          {
+            "node": "Process Order Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Categories": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Products": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Authentication": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Order History": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Order Details": {
+      "main": [
+        [
+          {
+            "node": "Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "86a6c211-5172-4aeb-9b24-523e0037c7f0",
+  "triggerCount": 0,
+  "tags": []
+}
