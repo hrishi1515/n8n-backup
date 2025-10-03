@@ -1,0 +1,938 @@
+ {
+  "createdAt": "2025-08-27T13:50:49.179Z",
+  "updatedAt": "2025-08-27T16:28:30.000Z",
+  "id": "QB55GZ8hPkGlktsL",
+  "name": "llama_cloud_parsing",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        -20
+      ],
+      "id": "b7a53d42-d5e0-4bff-b0f3-5596cea728ba",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "=https://drive.google.com/uc?export=download&id=1liuo4hErriUCeuK-9uilHnR_EOlt-6xS\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "58ad3cbf-a0a6-414d-8aab-b345215728af",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloud.llamaindex.ai/api/v1/parsing/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "value": "openai-gpt-4-1-mini"
+            },
+            {
+              "name": "high_res_ocr",
+              "value": "True"
+            },
+            {
+              "name": "adaptive_long_table",
+              "value": "True"
+            },
+            {
+              "name": "outlined_table_extraction",
+              "value": "True"
+            },
+            {
+              "name": "output_tables_as_HTML",
+              "value": "True"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "c193ac12-3c7b-42eb-8ea6-61099ef86aa5",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RAVK7VaWnULEjMpi",
+          "name": "llama_index"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "SUCCESS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f995320c-fd45-4313-9005-2f689e769971"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SUCCESS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "49296e0a-a418-40ad-aaf4-ce3c607a5e7e",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "=PENDING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PENDING"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1100,
+        0
+      ],
+      "id": "65d04d69-b0f8-4ff9-91c8-076b46561015",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "amount": 7
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "id": "bf14b3c7-f097-4481-aaf2-4636cb054dc5",
+      "name": "Wait",
+      "webhookId": "38a26cbf-a2fb-4068-a3b8-4de66c3d76d4"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        100
+      ],
+      "id": "d6270329-1730-4d1b-99f3-d5ba2b719b11",
+      "name": "Wait1",
+      "webhookId": "8649da18-785b-4053-9566-d28685317bb9"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/v1/parsing/job/{{ $('HTTP Request1').item.json.id }}/details",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        100
+      ],
+      "id": "59303ec8-984c-4d49-b023-5079a9dab68c",
+      "name": "HTTP Request2",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RAVK7VaWnULEjMpi",
+          "name": "llama_index"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/v1/parsing/job/{{ $json.id }}/result/raw/markdown",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        -100
+      ],
+      "id": "58dd9b25-587f-4b1e-a524-7af7ef078be0",
+      "name": "HTTP Request3",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RAVK7VaWnULEjMpi",
+          "name": "llama_index"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents_ticket",
+          "mode": "list",
+          "cachedResultName": "documents_ticket"
+        },
+        "options": {
+          "queryName": "match_documents_ticket"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.2,
+      "position": [
+        1900,
+        -100
+      ],
+      "id": "c5e6759e-ee0b-44aa-a424-bc4a4759441e",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jK39MwXl63HJbo3V",
+          "name": "iksula_hr_doc"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1800,
+        60
+      ],
+      "id": "2c82aabd-86ce-418b-a7e2-d5a767384002",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        2040,
+        120
+      ],
+      "id": "977990f7-d8cd-4371-94e2-78453d13f170",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        2140,
+        340
+      ],
+      "id": "f8201313-94d3-4149-b42b-f79020fd809d",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -220,
+        560
+      ],
+      "id": "43d81dd7-db12-4cb1-81a9-637e8ba7b356",
+      "name": "When chat message received",
+      "webhookId": "6b0b612e-fd9e-46cb-ae1a-4787448e6584"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful assistant. \nWhen user asks any question perform RAG first ."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        20,
+        540
+      ],
+      "id": "36c60601-dd5e-40c1-8b87-703c98b67de7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -20,
+        720
+      ],
+      "id": "0f29736b-e607-44b7-b9b6-1b1035d33b2d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        120,
+        760
+      ],
+      "id": "8b6786db-23d5-4b1d-ba36-7c7f7170d0e7",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "document",
+        "toolDescription": "Use RAG to look up information in the knowledgebase.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents_ticket",
+          "mode": "list",
+          "cachedResultName": "documents_ticket"
+        },
+        "topK": 5,
+        "options": {
+          "queryName": "match_documents_ticket"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.2,
+      "position": [
+        460,
+        640
+      ],
+      "id": "ca4da122-903a-4762-8945-d2cb7eb64229",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jK39MwXl63HJbo3V",
+          "name": "iksula_hr_doc"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        860
+      ],
+      "id": "08ab1431-cee2-43d2-9c0a-edac934728fa",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {
+    "HTTP Request": [
+      {
+        "json": {}
+      }
+    ],
+    "HTTP Request1": [
+      {
+        "json": {
+          "id": "3ab367ea-e395-4eb2-bff3-5261f34b0e15",
+          "status": "PENDING"
+        }
+      }
+    ],
+    "Wait": [
+      {
+        "json": {
+          "id": "3ab367ea-e395-4eb2-bff3-5261f34b0e15",
+          "status": "PENDING"
+        }
+      }
+    ],
+    "Wait1": [
+      {
+        "json": {
+          "id": "3ab367ea-e395-4eb2-bff3-5261f34b0e15",
+          "status": "PENDING"
+        }
+      }
+    ],
+    "HTTP Request2": [
+      {
+        "json": {
+          "webhook_configurations": null,
+          "job_name": "parse_raw_file_job",
+          "partitions": {
+            "file_parsing_id_partition": "23c9737f-0b8b-4876-b103-a4f7c4cde764"
+          },
+          "parameters": {
+            "webhook_configurations": null,
+            "priority": null,
+            "custom_metadata": null,
+            "resource_info": null,
+            "languages": [
+              "en"
+            ],
+            "parsing_instruction": "",
+            "disable_ocr": false,
+            "annotate_links": false,
+            "adaptive_long_table": true,
+            "compact_markdown_table": false,
+            "disable_reconstruction": false,
+            "disable_image_extraction": false,
+            "invalidate_cache": false,
+            "outlined_table_extraction": true,
+            "merge_tables_across_pages_in_markdown": false,
+            "output_pdf_of_document": false,
+            "do_not_cache": false,
+            "fast_mode": false,
+            "skip_diagonal_text": false,
+            "preserve_layout_alignment_across_pages": false,
+            "preserve_very_small_text": false,
+            "gpt4o_mode": false,
+            "do_not_unroll_columns": false,
+            "extract_layout": false,
+            "high_res_ocr": true,
+            "html_make_all_elements_visible": false,
+            "html_remove_navigation_elements": false,
+            "html_remove_fixed_elements": false,
+            "guess_xlsx_sheet_name": false,
+            "page_separator": "\n\n---\n\n",
+            "bounding_box": "",
+            "bbox_top": null,
+            "bbox_right": null,
+            "bbox_bottom": null,
+            "bbox_left": null,
+            "target_pages": "",
+            "use_vendor_multimodal_model": false,
+            "vendor_multimodal_model_name": "",
+            "model": "openai-gpt-4-1-mini",
+            "page_prefix": "",
+            "page_suffix": "",
+            "webhook_url": "",
+            "preset": "",
+            "take_screenshot": false,
+            "is_formatting_instruction": true,
+            "premium_mode": false,
+            "continuous_mode": false,
+            "input_s3_path": "s3://llama-platform-file-parsing/fb_ZTxUPDECXDNbRuYDh6cA17gSjWB2/23c9737f-0b8b-4876-b103-a4f7c4cde764/input.pdf",
+            "input_s3_region": "us-east-1",
+            "output_s3_path_prefix": "s3://llama-platform-file-parsing/fb_ZTxUPDECXDNbRuYDh6cA17gSjWB2/23c9737f-0b8b-4876-b103-a4f7c4cde764",
+            "output_s3_region": "us-east-1",
+            "project_id": "8f961fbb-2306-4360-8847-5db2e73d15d3",
+            "azure_openai_deployment_name": null,
+            "azure_openai_endpoint": null,
+            "azure_openai_api_version": null,
+            "input_url": null,
+            "http_proxy": null,
+            "auto_mode": false,
+            "auto_mode_trigger_on_regexp_in_page": null,
+            "auto_mode_trigger_on_text_in_page": null,
+            "auto_mode_trigger_on_table_in_page": false,
+            "auto_mode_trigger_on_image_in_page": false,
+            "auto_mode_configuration_json": null,
+            "structured_output": false,
+            "structured_output_json_schema": null,
+            "structured_output_json_schema_name": null,
+            "max_pages": null,
+            "max_pages_enforced": 0,
+            "extract_charts": false,
+            "formatting_instruction": null,
+            "complemental_formatting_instruction": null,
+            "content_guideline_instruction": null,
+            "spreadsheet_extract_sub_tables": true,
+            "job_timeout_in_seconds": null,
+            "job_timeout_extra_time_per_page_in_seconds": null,
+            "strict_mode_image_extraction": false,
+            "strict_mode_image_ocr": false,
+            "strict_mode_reconstruction": false,
+            "strict_mode_buggy_font": false,
+            "save_images": true,
+            "hide_headers": false,
+            "hide_footers": false,
+            "page_header_prefix": null,
+            "page_header_suffix": null,
+            "page_footer_prefix": null,
+            "page_footer_suffix": null,
+            "ignore_document_elements_for_layout_detection": false,
+            "output_tables_as_HTML": true,
+            "internal_is_screenshot_job": false,
+            "parse_mode": null,
+            "system_prompt": "",
+            "system_prompt_append": "",
+            "user_prompt": "",
+            "page_error_tolerance": 0.05,
+            "replace_failed_page_mode": null,
+            "replace_failed_page_with_error_message_prefix": "",
+            "replace_failed_page_with_error_message_suffix": "",
+            "markdown_table_multiline_header_separator": null,
+            "type": "parse",
+            "file_name": "c4611_sample_explain.pdf",
+            "original_file_name": "c4611_sample_explain.pdf",
+            "file_key": "s3://llama-platform-file-parsing/fb_ZTxUPDECXDNbRuYDh6cA17gSjWB2/23c9737f-0b8b-4876-b103-a4f7c4cde764/input.pdf",
+            "lang": "en",
+            "outputBucket": null,
+            "file_id": null,
+            "pipeline_id": null
+          },
+          "session_id": null,
+          "correlation_id": null,
+          "parent_job_execution_id": null,
+          "user_id": "fb:ZTxUPDECXDNbRuYDh6cA17gSjWB2",
+          "created_at": "2025-08-27T16:10:02.739000Z",
+          "project_id": "8f961fbb-2306-4360-8847-5db2e73d15d3",
+          "id": "3ab367ea-e395-4eb2-bff3-5261f34b0e15",
+          "status": "SUCCESS",
+          "error_code": null,
+          "error_message": null,
+          "attempts": 1,
+          "started_at": "2025-08-27T16:10:02.794000Z",
+          "ended_at": "2025-08-27T16:10:05.255000Z",
+          "updated_at": "2025-08-27T16:10:05.260000Z",
+          "jobInfo": {
+            "status": "success",
+            "info": "cache hit",
+            "model": null,
+            "pages": 4,
+            "metadata": {
+              "pdf-pages": 0,
+              "pdf-real-pages": 0,
+              "pdf-rawTextLength": 4956,
+              "pdf-mdLength": 4711,
+              "pdf-time": 14524,
+              "pdf-ocrTime": 903,
+              "pdf-image-convertTime": 112,
+              "pdf-pdfToHTMLTime": 0,
+              "pdf-llmTime": 13079,
+              "pdf-inputTokens": 4450,
+              "pdf-outputTokens": 2786,
+              "pdf-image-ocr-count": 2,
+              "pdf-image-ocr-failed-count": 0,
+              "pdf-image-ocr-success-count": 2,
+              "pdf-image-ocr-empty-count": 0,
+              "pdf-image-ocr-hadText-count": 2,
+              "pdf-image-ocr-pixels": 272782,
+              "pdf-multimodal-time": 0,
+              "pdf-multimodal-pdf2Image": 0,
+              "pdf-model": null,
+              "pdf-high-res-ocr": 4,
+              "pdf-cacheHit": true
+            },
+            "images": [
+              "img_p0_1.png",
+              "img_p0_2.png"
+            ],
+            "charts": [],
+            "options": {
+              "adaptiveLongTable": true,
+              "annotateLinks": null,
+              "autoMode": false,
+              "autoModeConfigurationJson": null,
+              "autoModeTriggerOnImageInPage": false,
+              "autoModeTriggerOnRegexpInPage": null,
+              "autoModeTriggerOnTableInPage": false,
+              "autoModeTriggerOnTextInPage": null,
+              "azureOpenAiApiVersion": null,
+              "azureOpenAiDeploymentName": null,
+              "azureOpenAiEndpoint": null,
+              "azureOpenAiKey": null,
+              "bboxBottom": null,
+              "bboxLeft": null,
+              "bboxRight": null,
+              "bboxTop": null,
+              "boundingBox": null,
+              "compactMarkdownTable": false,
+              "complementalFormattingInstruction": null,
+              "contentGuidelineInstruction": null,
+              "disableImageExtraction": false,
+              "disableOcr": false,
+              "doNotCache": false,
+              "doNotUnrollColumns": false,
+              "extractCharts": false,
+              "extractLayout": false,
+              "fileId": null,
+              "fileName": "c4611_sample_explain.pdf",
+              "formattingInstruction": null,
+              "guessXLSXSheetName": false,
+              "hideFooters": false,
+              "hideHeaders": false,
+              "highResOcr": true,
+              "htmlMakeAllElementsVisible": false,
+              "htmlRemoveFixedElements": false,
+              "htmlRemoveNavigationElements": false,
+              "httpProxy": null,
+              "ignoreDocumentElementsForLayoutDetection": false,
+              "inputS3Path": "s3://llama-platform-file-parsing/fb_ZTxUPDECXDNbRuYDh6cA17gSjWB2/9d0b60de-33cb-426d-89c4-bac6f816a553/input.pdf",
+              "inputS3Region": "us-east-1",
+              "inputUrl": null,
+              "invalidateCache": false,
+              "isFormattingInstruction": true,
+              "isOurOwnS3Bucket": true,
+              "jobTimeoutExtraTimePerPageInSeconds": 2,
+              "jobTimeoutInSeconds": null,
+              "language": "en",
+              "logFiles": false,
+              "markdownTableMultilineHeaderSeparator": "<br/>",
+              "maxPages": 0,
+              "mergeTablesAcrossPagesInMarkdown": false,
+              "model": "openai-gpt-4-1-mini",
+              "multimodalPipeline": false,
+              "outlinedTableExtraction": true,
+              "outputPDFOfDocument": false,
+              "outputS3PathPrefix": "s3://llama-platform-file-parsing/fb_ZTxUPDECXDNbRuYDh6cA17gSjWB2/9d0b60de-33cb-426d-89c4-bac6f816a553",
+              "outputS3Region": "us-east-1",
+              "outputTablesAsHTML": true,
+              "pageErrorTolerance": 0.05,
+              "pageFooterPrefix": null,
+              "pageFooterSuffix": null,
+              "pageHeaderPrefix": null,
+              "pageHeaderSuffix": null,
+              "pagePrefix": null,
+              "pageSeparator": "\n\n---\n\n",
+              "pageSuffix": null,
+              "parseMode": "parse_page_with_llm",
+              "preserveLayoutAlignmentAcrossPages": false,
+              "preserveVerySmallText": false,
+              "replaceFailedPageMode": "raw_text",
+              "replaceFailedPageWithErrorMessagePrefix": null,
+              "replaceFailedPageWithErrorMessageSuffix": null,
+              "saveImages": true,
+              "skipDiagonalText": false,
+              "spreadSheetExtractSubTables": true,
+              "strictModeBuggyFont": false,
+              "strictModeImageExtraction": false,
+              "strictModeImageOCR": false,
+              "strictModeReconstruction": false,
+              "structuredOutput": false,
+              "structuredOutputJSONSchema": null,
+              "structuredOutputJSONSchemaName": null,
+              "structuredOutputSchema": null,
+              "takeScreenshot": false,
+              "targetPages": null,
+              "template": null,
+              "vendorAPIKey": null,
+              "webhookUrl": null,
+              "_isPremiumMode": false,
+              "job_record_id": "20258efa-2a42-4dc8-9beb-448e5099bd13",
+              "jobOutOfQueueTimestamp": 1756303535996,
+              "jobCreatedAtTimestamp": 1756303535996,
+              "legacy_job_name": "parse_raw_file_job",
+              "legacy_file_parsing_id_partition": "9d0b60de-33cb-426d-89c4-bac6f816a553",
+              "legacy_session_id": null,
+              "legacy_correlation_id": null,
+              "legacy_parent_job_execution_id": null,
+              "user_id": "fb:ZTxUPDECXDNbRuYDh6cA17gSjWB2",
+              "project_id": "8f961fbb-2306-4360-8847-5db2e73d15d3",
+              "created_at": "2025-08-27T14:05:35.668000Z",
+              "temporal_run_id": null,
+              "temporal_workflow_id": null,
+              "documentAborter": {}
+            }
+          }
+        }
+      }
+    ],
+    "HTTP Request3": [
+      {
+        "json": {
+          "data": "# PDF BOOKMARK SAMPLE\n\n**Sample Date:** May 2001\n**Prepared by:** Accelio Present Applied Technology\n\n**Created and Tested Using:**\n* Accelio Present Central 5.4\n* Accelio Present Output Designer 5.4\n\n**Features Demonstrated:**\n* Primary bookmarks in a PDF file.\n* Secondary bookmarks in a PDF file.\n\n## Overview\n\nThis sample consists of a simple form containing four distinct fields. The data file contains eight separate records.\nBy default, the data file will produce a PDF file containing eight separate pages. The selective use of the bookmark file will produce the same PDF with a separate pane containing bookmarks. This screenshot of the sample output shows a PDF file with bookmarks.\n\n> Acrobat Reader - [ap_bookmark.pdf]\n> ```\n> File            Document View Window\n> TA          Edit              Help\n> A                             TE IK            >\n> Bookmarks          Thumbnails\n> …] Invoices by Date\n>             2000-01-1\n>             2000-01-2\n>             2000-01-3\n>             2000-01-4\n>             2000-01-5                   Date      2000-01-1\n>             2000-01-6\n>             2000-01-7                   Description Description for item # 1\n>             2000-01-8\n>                                         Type      TYPE1\n>\n>                                         Amount    11.00\n> ```\n\nThe left pane displays the available bookmarks for this PDF. You may need to enable the display of bookmarks in Adobe Acrobat Reader by clicking Window > Show Bookmarks. Selecting a date from the left pane displays the corresponding page within the document.\nNote that the index has been sorted according to the specification in the bookmark file, and that pages within the file are created according to the original order in the data file.\n\nPDF Bookmark Sample                                                                Page 1 of 4\n\n---\n\n# Sample Data File\n\n```\n^reformat trunc\n^symbolset WINLATIN1\n^field trans_date\n2000-01-1\n^field description\nDescription for item #1\n^field trans_type\nTYPE1\n^field trans_amount\n11.00\n^page 1\n^field trans_date\n2000-01-2\n^field description\nDescription for item #2\n^field trans_type\nTYPE2\n^field trans_amount\n11.00\n^page 1\n^field trans_date\n2000-01-3\n^field description\nDescription for item #3\n^field trans_type\nTYPE3\n```\n\n# Sample Bookmark File\n\n```\n[invoices]\nInvoices by Date=0\ntrans_date=1,A\n\n[type]\nInvoices by Item Type=0\ntrans_type=1,A\n\n[amount]\nInvoices by Transaction Amount=0\ntrans_amount=1,D\n```\n\nThe example bookmark file includes three distinct sections:\n\n* Invoices sorted, ascending, by date.\n* Invoices sorted, ascending, by item type.\n* Invoices sorted, descending, by transaction amount.\n\n> PDF Bookmark Sample    Page 2 of 4\n\n---\n\n# Sample Files\n\nThis sample package contains:\n\n<table>\n<thead> <tr> <th>Filename</th>\n<th>Description</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>&lt;code>ap_bookmark.IFD&lt;/code></td>\n<td>The template design.</td>\n</tr>\n<tr>\n<td>&lt;code>ap_bookmark.mdf&lt;/code></td>\n<td>The template targeted for PDF output.</td>\n</tr>\n<tr>\n<td>&lt;code>ap_bookmark.dat&lt;/code></td>\n<td>A sample data file in DAT format.</td>\n</tr>\n<tr>\n<td>&lt;code>ap_bookmark.bmk&lt;/code></td>\n<td>A sample bookmark file.</td>\n</tr>\n<tr>\n<td>&lt;code>ap_bookmark.pdf&lt;/code></td>\n<td>Sample PDF output.</td>\n</tr>\n<tr>\n<td>&lt;code>ap_bookmark_doc.pdf&lt;/code></td>\n<td>A document describing the sample.</td>\n</tr>\n</tbody>\n</table>\n\n# Deploying the Sample\n\nTo deploy this sample in your environment:\n\n1. Open the template design ap_bookmark.IFD in Output Designer and recompile the template for the appropriate presentment target.\n\n2. Modify the -z option in the ^job command in the data file ap_bookmark.dat to:\n* Identify the target output device.\n* Identify the bookmark file using the -abmk command.\n* Identify the section for which to generate bookmarks, if desired, using the -abms command.\n\nFor example,\n\n<table>\n<thead> <tr> <th>To bookmark by</th>\n<th>Use the command line parameter</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Invoices</td>\n<td>&lt;code>-abmkap_bookmark.bmk -abmsinvoices&lt;/code></td>\n</tr>\n<tr>\n<td>Type</td>\n<td>&lt;code>-abmkap_bookmark.bmk -abmstype&lt;/code></td>\n</tr>\n<tr>\n<td>Amount</td>\n<td>&lt;code>-abmkap_bookmark.bmk -abmsamount&lt;/code></td>\n</tr>\n</tbody>\n</table>\n\n\n\n---\n\n### 3. Place the accompanying files in directories consistent with your implementation:\n* Place `ap_bookmark.IFD` in the Designs subdirectory for Output Designer.\n* Place `ap_bookmark.mdf` in the forms subdirectory accessible to Central.\n* Place `ap_bookmark.bmk` in an addressable directory.\n\n### Running the Sample\n\n* To run this sample, place `ap_bookmark.dat` in the collector directory scanned by Central."
+        }
+      }
+    ],
+    "When clicking ‘Execute workflow’": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  "versionId": "2b138954-1eea-4b47-bd12-6bbfd254d116",
+  "triggerCount": 0,
+  "tags": []
+}
