@@ -1,0 +1,19 @@
+ {
+  "createdAt": "2025-06-02T06:17:17.392Z",
+  "updatedAt": "2025-06-08T16:47:05.000Z",
+  "id": "rTR8WXQHf6LTN6BL",
+  "name": "KBL Test",
+  "active": false,
+  "isArchived": true,
+  "nodes": [],
+  "connections": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "dfb5c226-4990-4567-85c0-f22c0fe938bb",
+  "triggerCount": 0,
+  "tags": []
+}
