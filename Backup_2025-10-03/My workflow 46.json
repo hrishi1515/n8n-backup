@@ -1,0 +1,982 @@
+ {
+  "createdAt": "2025-09-29T15:07:23.694Z",
+  "updatedAt": "2025-10-03T05:23:45.000Z",
+  "id": "YgRXqzco9rn5S1Yb",
+  "name": "My workflow 46",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "id": "2080b2c0-de6c-4e12-be8b-ee7f3d62dda0",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -940,
+        20
+      ],
+      "webhookId": "kbl-chatbot-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a9a245e-f1a1-4282-bb02-a81ffe629f0f",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "b80831d8-c653-4203-8706-adedfdb98f77",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId || 'session_' + Date.now() }}",
+              "type": "string"
+            },
+            {
+              "id": "c80831d8-c653-4203-8706-adedfdb98f88",
+              "name": "sender",
+              "value": "={{ $json?.sender || $json?.body?.sender || 'user' }}",
+              "type": "string"
+            },
+            {
+              "id": "d90941e9-e653-5304-9707-beeefeb09f99",
+              "name": "authToken",
+              "value": "={{ $json?.authToken || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "65da35c1-d6b9-44f8-9f02-58f7c07d6e91",
+      "name": "Process Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -740,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.sender }}",
+              "rightValue": "human_agent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "4e1b26ac-c7b2-4e77-82af-f7214ef89994"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "57bf60f2-b515-4986-bf9f-e39b48e391f2",
+      "name": "Check Sender",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant for Kirloskar water pumps. Help customers with:\n\n**Product Categories:**\n- Gardening Pumps\n- Irrigation Systems\n- Residential Pumps\n- Commercial & Industrial\n- Dewatering Solutions\n- Firefighting Equipment\n- Agriculture Pumps\n\n**Services:**\n1. Product discovery and information\n2. Order management (requires login)\n3. Cart operations (requires login)\n4. Support and assistance\n\n**Contact Info:**\n📞 Toll-Free: 1800-123-4443\n🏢 Address: Kirloskar Brothers Limited, Baner, Pune 411045\n🌐 Website: https://www.kirloskarpumps.com\n\nRespond naturally and helpfully. For authenticated services, mention that login is required."
+        }
+      },
+      "id": "1f23910a-74aa-4db8-a057-c3dddd932d77",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -340,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract intent from user input\nconst chatInput = $('Process Input').item.json.chatInput.toLowerCase();\nconst authToken = $('Process Input').item.json.authToken;\nconst sessionId = $('Process Input').item.json.sessionId;\nconst aiResponse = $json.output || '';\n\nlet intent = 'GENERAL';\nlet requiresAuth = false;\nlet hasToken = authToken !== '';\nlet category = '';\n\n// Product discovery\nif (chatInput.includes('pump') || chatInput.includes('product')) {\n  intent = 'PRODUCT_DISCOVERY';\n  \n  // Extract category\n  if (chatInput.includes('garden')) category = 'gardening';\n  else if (chatInput.includes('irrigation')) category = 'irrigation';\n  else if (chatInput.includes('residential')) category = 'residential';\n  else if (chatInput.includes('commercial') || chatInput.includes('industrial')) category = 'commercial';\n  else if (chatInput.includes('agriculture') || chatInput.includes('farm')) category = 'agriculture';\n  else if (chatInput.includes('fire')) category = 'firefighting';\n  else if (chatInput.includes('dewater')) category = 'dewatering';\n}\n\n// Order management\nif (chatInput.includes('order')) {\n  intent = 'ORDER_HISTORY';\n  requiresAuth = true;\n}\n\n// Cart\nif (chatInput.includes('cart')) {\n  intent = 'CART_VIEW';\n  requiresAuth = true;\n}\n\n// Support\nif (chatInput.includes('help') || chatInput.includes('support') || chatInput.includes('contact')) {\n  intent = 'SUPPORT';\n}\n\n// Mobile number provided\nif (chatInput.match(/[6-9]\\d{9}/)) {\n  intent = 'MOBILE_PROVIDED';\n}\n\n// OTP provided\nif (chatInput.match(/^\\d{4,6}$/)) {\n  intent = 'OTP_PROVIDED';\n}\n\nreturn {\n  intent: intent,\n  requiresAuth: requiresAuth,\n  hasToken: hasToken,\n  category: category,\n  aiResponse: aiResponse,\n  sessionId: sessionId,\n  originalInput: chatInput\n};"
+      },
+      "id": "8814c27c-3472-470a-a9fc-b0f8031ced75",
+      "name": "Extract Intent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.requiresAuth }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "id": "31514133-8e1f-4f4c-a47e-c8b8a230b86e"
+            },
+            {
+              "leftValue": "={{ $json.hasToken }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              },
+              "id": "712aced9-4631-4163-aebf-46e4b6ee6d01"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "87580981-b82d-41a3-a2c8-33cce125deda",
+      "name": "Check Auth",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        0,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "1813bc0f-3dd8-40d3-96fa-3e197123222e",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "GENERAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GENERAL"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "PRODUCT_DISCOVERY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0ee9e62a-2d2f-413c-8dfd-a47c86818e36"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PRODUCT_DISCOVERY"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "ORDER_HISTORY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f6d872d0-3e59-46b0-aefa-c5680d4f95d8"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ORDER_HISTORY"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "CART_VIEW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "105699e7-862f-4a6f-b5f9-9d97b1d62ef3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CART_VIEW"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "SUPPORT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "846b13d0-c5db-484f-81d0-f4f1462e68f6"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "SUPPORT"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "MOBILE_PROVIDED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cb77291f-6e04-4a1e-b984-08fdc9c79263"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "MOBILE_PROVIDED"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "OTP_PROVIDED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4d74a3a5-0c8b-4912-8ed2-d075cb625218"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "OTP_PROVIDED"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "dce79e4d-b89f-4b36-98bb-8c82aff11a82",
+      "name": "Route Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        140,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://eshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"query\": \"query { products(filter: { category_id: { eq: \\\"4\\\" } }, pageSize: 5, currentPage: 1) { total_count items { id sku name url_key price_range { minimum_price { final_price { value currency } } } } } }\"}",
+        "options": {}
+      },
+      "id": "52054e06-450d-474f-a173-514a632e6b18",
+      "name": "Fetch Products",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format product response\nconst response = $json;\nlet output = '';\n\ntry {\n  const products = response.data?.products?.items || [];\n  if (products.length > 0) {\n    output = `I found ${products.length} pumps for you:\\n\\n`;\n    products.forEach((p, i) => {\n      const price = p.price_range?.minimum_price?.final_price?.value || 0;\n      output += `${i+1}. **${p.name}**\\n`;\n      output += `   SKU: ${p.sku}\\n`;\n      output += `   Price: INR ${price.toLocaleString()}\\n`;\n      output += `   [View Details](https://eshop.kirloskarpumps.com/${p.url_key})\\n\\n`;\n    });\n    output += '\\nWould you like to know more about any specific pump?';\n  } else {\n    output = 'No products found. Try browsing other categories or contact support at 1800-123-4443.';\n  }\n} catch(e) {\n  output = 'Error fetching products. Please try again or contact support at 1800-123-4443.';\n}\n\nreturn {\n  output: output,\n  sessionId: $('Process Input').item.json.sessionId\n};"
+      },
+      "id": "71e65786-7806-42e9-a101-7ee53cd06c19",
+      "name": "Format Products",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "support",
+              "name": "output",
+              "value": "I'll help you connect with our support team:\\n\\n📞 **Toll-Free**: 1800-123-4443\\n📧 **Email**: support@kirloskarpumps.com\\n🏢 **Address**: Kirloskar Brothers Limited\\n   Yamuna, S.No.98(3 to 7), Plot No.3\\n   Baner, Pune 411045, Maharashtra\\n🌐 **Website**: https://www.kirloskarpumps.com\\n\\nOur support hours are Monday-Saturday, 9 AM to 6 PM.\\n\\nIs there anything specific I can help you with?",
+              "type": "string"
+            },
+            {
+              "id": "session",
+              "name": "sessionId",
+              "value": "={{ $('Process Input').item.json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8cebf1b1-1eb0-4400-a72c-cd318af2085e",
+      "name": "Support Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// General response using AI output\nconst aiResponse = $json.aiResponse || '';\nconst sessionId = $json.sessionId;\n\nlet output = aiResponse;\n\nif (!output) {\n  output = 'Hello! Welcome to Kirloskar Pumps. I can help you with:\\n\\n• Browse pump products by category\\n• Check your orders (login required)\\n• View your shopping cart\\n• Get support and assistance\\n\\nWhat would you like to do today?';\n}\n\nreturn {\n  output: output,\n  sessionId: sessionId\n};"
+      },
+      "id": "3241fa1f-a429-4ac2-852f-a6be0ab3f8b5",
+      "name": "General Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "auth-msg",
+              "name": "output",
+              "value": "To access your orders and cart, I need to verify your identity.\\n\\nPlease provide your registered 10-digit mobile number:",
+              "type": "string"
+            },
+            {
+              "id": "session",
+              "name": "sessionId",
+              "value": "={{ $('Process Input').item.json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2452937b-1b62-4cd1-ae1b-059c262634ed",
+      "name": "Auth Required",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "human",
+              "name": "output",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "session",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d29e6124-bb2b-4849-a83d-5557672d85a6",
+      "name": "Human Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -340,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "550472d4-3f3a-4bd5-b632-7053d1be192e",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c159d288-0602-4a5e-8b34-8a236f34ed9b",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        320
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "b743960b-049f-4994-b4b1-f14ca87a5c04",
+      "name": "Postgres Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        320
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://betaeshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Process Input').item.json.authToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"query\": \"query { customer { orders(pageSize: 5) { items { id number order_date status grand_total } } } }\"}",
+        "options": {}
+      },
+      "id": "bc9bdc97-68f6-404a-a402-5b28ec469194",
+      "name": "Fetch Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format orders\nconst response = $json;\nlet output = '';\n\ntry {\n  const orders = response.data?.customer?.orders?.items || [];\n  if (orders.length > 0) {\n    output = 'Your recent orders:\\n\\n';\n    orders.forEach((o, i) => {\n      output += `${i+1}. Order #${o.number}\\n`;\n      output += `   Date: ${new Date(o.order_date).toLocaleDateString()}\\n`;\n      output += `   Status: ${o.status}\\n`;\n      output += `   Total: INR ${o.grand_total?.toLocaleString()}\\n\\n`;\n    });\n  } else {\n    output = 'No orders found. Start shopping at https://eshop.kirloskarpumps.com';\n  }\n} catch(e) {\n  output = 'Could not fetch orders. Please ensure you are logged in.';\n}\n\nreturn {\n  output: output,\n  sessionId: $('Process Input').item.json.sessionId\n};"
+      },
+      "id": "f38e416d-fe69-4918-98d0-30723c9529d5",
+      "name": "Format Orders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://betaeshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Process Input').item.json.authToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"query\": \"query { customerCart { id items { id product { name sku } quantity } } }\"}",
+        "options": {}
+      },
+      "id": "0be4ac7c-c745-4bb6-b70e-43d745ac6bb6",
+      "name": "Fetch Cart",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format cart\nconst response = $json;\nlet output = '';\n\ntry {\n  const items = response.data?.customerCart?.items || [];\n  if (items.length > 0) {\n    output = 'Your cart contains:\\n\\n';\n    items.forEach((item, i) => {\n      output += `${i+1}. ${item.product.name}\\n`;\n      output += `   SKU: ${item.product.sku}\\n`;\n      output += `   Quantity: ${item.quantity}\\n\\n`;\n    });\n    output += '[Proceed to Checkout](https://eshop.kirloskarpumps.com/checkout)';\n  } else {\n    output = 'Your cart is empty. Browse our products to add items.';\n  }\n} catch(e) {\n  output = 'Could not fetch cart. Please ensure you are logged in.';\n}\n\nreturn {\n  output: output,\n  sessionId: $('Process Input').item.json.sessionId\n};"
+      },
+      "id": "1feee84d-181c-46a2-bace-9e303918379c",
+      "name": "Format Cart",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle mobile number\nconst input = $json.originalInput;\nconst mobile = input.match(/[6-9]\\d{9}/)?.[0];\n\nlet output = '';\nif (mobile) {\n  output = `I've detected your mobile number: ${mobile}\\n\\nSending OTP...\\n(In production, this would call the OTP API)\\n\\nPlease enter the OTP you receive.`;\n} else {\n  output = 'Invalid mobile number. Please provide a valid 10-digit mobile number starting with 6-9.';\n}\n\nreturn {\n  output: output,\n  sessionId: $json.sessionId,\n  mobile: mobile\n};"
+      },
+      "id": "3dc6d4ee-ba04-4ae8-acb3-536a6543696e",
+      "name": "Handle Mobile",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle OTP\nconst input = $json.originalInput;\nconst otp = input.match(/^\\d{4,6}$/)?.[0];\n\nlet output = '';\nif (otp) {\n  output = `Verifying OTP: ${otp}...\\n\\n✅ Login successful!\\n\\nYou can now access:\\n• Your order history\\n• Shopping cart\\n• Personalized recommendations\\n\\nHow can I help you today?`;\n  // In production, this would verify OTP and return a token\n} else {\n  output = 'Invalid OTP format. Please enter the 4-6 digit OTP you received.';\n}\n\nreturn {\n  output: output,\n  sessionId: $json.sessionId,\n  authToken: otp ? 'mock-auth-token-' + Date.now() : ''\n};"
+      },
+      "id": "9aa52df2-648b-410f-a836-94dde7e63134",
+      "name": "Handle OTP",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        660,
+        680
+      ],
+      "id": "706fffba-ae5b-44dd-97c2-1e270b1b05ba",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Process Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Input": {
+      "main": [
+        [
+          {
+            "node": "Check Sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Sender": {
+      "main": [
+        [
+          {
+            "node": "Human Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Intent": {
+      "main": [
+        [
+          {
+            "node": "Check Auth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Auth": {
+      "main": [
+        [
+          {
+            "node": "Auth Required",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Intent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Products",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Orders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Cart",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Support Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Mobile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle OTP",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Products": {
+      "main": [
+        [
+          {
+            "node": "Format Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Products": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Orders": {
+      "main": [
+        [
+          {
+            "node": "Format Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Orders": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Cart": {
+      "main": [
+        [
+          {
+            "node": "Format Cart",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Cart": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Support Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Mobile": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle OTP": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "General Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth Required": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "e6d292e0-949e-4fe8-bd91-22eb281f331e",
+  "triggerCount": 1,
+  "tags": []
+}
