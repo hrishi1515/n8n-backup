@@ -1,0 +1,1292 @@
+ {
+  "createdAt": "2025-09-29T14:32:10.962Z",
+  "updatedAt": "2025-09-29T15:04:58.000Z",
+  "id": "5yfSsDDtxqcNtPsn",
+  "name": "My workflow 45",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "id": "76fd4bbc-a9aa-4793-987f-f537fefdbe11",
+      "name": "Chat Message Received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1000,
+        -220
+      ],
+      "webhookId": "kbl-enhanced-chatbot"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "input-data",
+              "name": "userInput",
+              "value": "={{ $json?.chatInput || $json.body?.chatInput || $json.body?.message || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "session-data",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body?.sessionId || 'session-' + Math.random().toString(36).substr(2, 9) }}",
+              "type": "string"
+            },
+            {
+              "id": "state-data",
+              "name": "conversationState",
+              "value": "={{ $json?.conversationState || $json.body?.conversationState || 'welcome' }}",
+              "type": "string"
+            },
+            {
+              "id": "auth-data",
+              "name": "authToken",
+              "value": "={{ $json?.authToken || $json.body?.authToken || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "user-metadata",
+              "name": "userData",
+              "value": "={{ $json?.userData || $json.body?.userData || {} }}",
+              "type": "object"
+            },
+            {
+              "id": "agent-status",
+              "name": "agentMode",
+              "value": "={{ $json?.agentMode || $json.body?.agentMode || false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "sender-type",
+              "name": "senderType",
+              "value": "={{ $json?.senderType || $json.body?.senderType || 'user' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "98be7984-79b8-4726-8358-b91dd9a78ac6",
+      "name": "Extract Input Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -800,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "agent-active-check",
+              "leftValue": "={{ $json.agentMode }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            },
+            {
+              "id": "sender-human",
+              "leftValue": "={{ $json.senderType }}",
+              "rightValue": "human_agent",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "a4c0422f-9f7f-45d1-8e47-454b019c6459",
+      "name": "Check Agent Mode",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO chat_sessions (session_id, message, sender_type, timestamp, agent_active) VALUES ($1, $2, $3, NOW(), $4) ON CONFLICT (session_id) DO UPDATE SET message = $2, sender_type = $3, timestamp = NOW(), agent_active = $4",
+        "options": {
+          "queryReplacement": "={{ [$json.sessionId, $json.userInput, $json.senderType, $json.agentMode] }}"
+        }
+      },
+      "id": "10a78c1a-10f9-4bf2-b8bf-636f4a8b5093",
+      "name": "Store Agent Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -380,
+        -240
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-response",
+              "name": "response",
+              "value": "{{ $json.userInput }}",
+              "type": "string"
+            },
+            {
+              "id": "agent-type",
+              "name": "responseType",
+              "value": "human_agent_message",
+              "type": "string"
+            },
+            {
+              "id": "agent-sender",
+              "name": "senderType",
+              "value": "human_agent",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b5b8524e-a2f4-4476-855b-68e9433ab874",
+      "name": "Format Agent Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -200,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "agent-intent-check",
+              "leftValue": "={{ $json.userInput.toLowerCase() }}",
+              "rightValue": "agent|human|support|help|talk to someone|escalate|representative|customer service",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a3e19d3a-690e-45bb-9604-fa23c9d6efcd",
+      "name": "Detect Agent Request",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "collect-name",
+              "name": "response",
+              "value": "🆘 I'd be happy to connect you with one of our support agents!\\n\\nTo create a support ticket, I'll need some information:\\n\\n👤 **What's your name?**",
+              "type": "string"
+            },
+            {
+              "id": "ticket-state",
+              "name": "conversationState",
+              "value": "collecting_name",
+              "type": "string"
+            },
+            {
+              "id": "ticket-type",
+              "name": "responseType",
+              "value": "ticket_creation",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "32953f53-67df-462b-987a-acca8927368e",
+      "name": "Start Ticket Creation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "name-collection",
+              "leftValue": "={{ $json.conversationState }}",
+              "rightValue": "collecting_name",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b453d971-91a7-4be1-a66d-717655df9c1e",
+      "name": "Check Name Collection",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "store-name",
+              "name": "userData",
+              "value": "={{ Object.assign($json.userData || {}, { name: $json.userInput }) }}",
+              "type": "object"
+            },
+            {
+              "id": "ask-email",
+              "name": "response",
+              "value": "Thank you, {{ $json.userInput }}! 👋\\n\\n📧 **What's your email address?**",
+              "type": "string"
+            },
+            {
+              "id": "email-state",
+              "name": "conversationState",
+              "value": "collecting_email",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "18a1342b-f928-4fce-8bfb-851c99bb1369",
+      "name": "Collect Name",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "email-collection",
+              "leftValue": "={{ $json.conversationState }}",
+              "rightValue": "collecting_email",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "email-format",
+              "leftValue": "={{ $json.userInput }}",
+              "rightValue": "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "all"
+        },
+        "options": {}
+      },
+      "id": "f2bcecee-c410-4d1d-809c-73aa7a873c25",
+      "name": "Validate Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "store-email",
+              "name": "userData",
+              "value": "={{ Object.assign($json.userData || {}, { email: $json.userInput }) }}",
+              "type": "object"
+            },
+            {
+              "id": "ask-mobile",
+              "name": "response",
+              "value": "Great! 📧\\n\\n📱 **What's your mobile number?** (10 digits)",
+              "type": "string"
+            },
+            {
+              "id": "mobile-state",
+              "name": "conversationState",
+              "value": "collecting_mobile",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "888932bf-8910-4bf8-872c-0c54dc844e2a",
+      "name": "Collect Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "mobile-collection",
+              "leftValue": "={{ $json.conversationState }}",
+              "rightValue": "collecting_mobile",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "mobile-format",
+              "leftValue": "={{ $json.userInput }}",
+              "rightValue": "^[6-9]\\d{9}$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "all"
+        },
+        "options": {}
+      },
+      "id": "efe9fa49-c490-4e26-a263-e753ec4455f8",
+      "name": "Validate Mobile",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "store-mobile",
+              "name": "userData",
+              "value": "={{ Object.assign($json.userData || {}, { mobile: $json.userInput }) }}",
+              "type": "object"
+            },
+            {
+              "id": "ask-query",
+              "name": "response",
+              "value": "Perfect! 📱\\n\\n❓ **Please describe your query or issue in detail:**",
+              "type": "string"
+            },
+            {
+              "id": "query-state",
+              "name": "conversationState",
+              "value": "collecting_query",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7d5219ea-dd05-4204-8b35-e39196186c91",
+      "name": "Collect Mobile",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "query-collection",
+              "leftValue": "={{ $json.conversationState }}",
+              "rightValue": "collecting_query",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "06131b81-e623-4a02-82ea-19a5577cc234",
+      "name": "Check Query Collection",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create support ticket\nconst userData = $json.userData || {};\nconst userQuery = $json.userInput;\nconst sessionId = $json.sessionId;\n\n// Generate ticket number\nconst ticketNumber = 'KBL' + Date.now().toString().slice(-8);\n\n// Prepare ticket data\nconst ticketData = {\n  ticketNumber: ticketNumber,\n  name: userData.name || 'Unknown',\n  email: userData.email || '',\n  mobile: userData.mobile || '',\n  query: userQuery,\n  sessionId: sessionId,\n  status: 'Open',\n  priority: 'Normal',\n  created: new Date().toISOString(),\n  category: 'General Support'\n};\n\n// Format response\nconst response = `🎫 **Support Ticket Created Successfully!**\\n\\n` +\n  `📋 **Ticket Number**: ${ticketNumber}\\n` +\n  `👤 **Name**: ${userData.name}\\n` +\n  `📧 **Email**: ${userData.email}\\n` +\n  `📱 **Mobile**: ${userData.mobile}\\n\\n` +\n  `✅ **Your query has been recorded and assigned to our support team.**\\n\\n` +\n  `⏱️ **Expected Response Time**: 2-4 hours\\n` +\n  `📧 **Confirmation email sent to**: ${userData.email}\\n\\n` +\n  `🔄 **Check agent availability for live chat?**`;\n\nreturn {\n  response: response,\n  ticketData: ticketData,\n  conversationState: 'ticket_created',\n  responseType: 'ticket_created',\n  showQuickReplies: true,\n  quickReplies: ['Check Agent Availability', 'Browse Products', 'Main Menu']\n};"
+      },
+      "id": "38fc37e6-91b6-43e7-b732-bfc734390445",
+      "name": "Create Support Ticket",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO support_tickets (ticket_number, name, email, mobile, query, session_id, status, priority, created_at, category) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9)",
+        "options": {
+          "queryReplacement": "={{ [$json.ticketData.ticketNumber, $json.ticketData.name, $json.ticketData.email, $json.ticketData.mobile, $json.ticketData.query, $json.ticketData.sessionId, $json.ticketData.status, $json.ticketData.priority, $json.ticketData.category] }}"
+        }
+      },
+      "id": "9c614e40-8c2d-4621-94e0-9fc1bfcc6f04",
+      "name": "Store Ticket in Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -200,
+        780
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.emailjs.com/api/v1.0/email/send",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "service_id",
+              "value": "YOUR_EMAIL_SERVICE_ID"
+            },
+            {
+              "name": "template_id",
+              "value": "support_ticket_template"
+            },
+            {
+              "name": "user_id",
+              "value": "YOUR_EMAIL_USER_ID"
+            },
+            {
+              "name": "template_params",
+              "value": "={{ { to_email: $json.ticketData.email, customer_name: $json.ticketData.name, ticket_number: $json.ticketData.ticketNumber, query: $json.ticketData.query } }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "982936e6-7577-46f3-8f13-bd8b5bff07f5",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "agent-availability-request",
+              "leftValue": "={{ $json.userInput.toLowerCase() }}",
+              "rightValue": "check agent|agent availability|live chat|connect to agent|available agent",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b387d42a-1678-4178-8c1d-9f8e1d017f77",
+      "name": "Check Agent Availability Request",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT agent_id, name, status, current_sessions FROM support_agents WHERE status = 'available' AND current_sessions < max_sessions ORDER BY current_sessions ASC LIMIT 1",
+        "options": {}
+      },
+      "id": "8db87974-84d3-4ac3-be86-4c7c168f890c",
+      "name": "Find Available Agent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -400,
+        980
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "agent-found",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "390e4683-d30d-477d-ba41-bbcc4c513b95",
+      "name": "Check Agent Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "agent-available",
+              "name": "response",
+              "value": "🟢 **Great news! An agent is available to chat with you now.**\\n\\n👨‍💼 **Agent**: {{ $json.name }}\\n\\n**Connecting you to live chat...**\\n\\n_From this point forward, you'll be chatting directly with our support agent. Type your message and they'll respond shortly._",
+              "type": "string"
+            },
+            {
+              "id": "agent-mode-on",
+              "name": "agentMode",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "agent-connected",
+              "name": "conversationState",
+              "value": "agent_connected",
+              "type": "string"
+            },
+            {
+              "id": "agent-data",
+              "name": "agentData",
+              "value": "={{ { agentId: $json.agent_id, agentName: $json.name } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "320fdec0-0bda-4391-9dba-bf6ad288457e",
+      "name": "Connect to Agent",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "no-agent",
+              "name": "response",
+              "value": "🔴 **No agents are currently available for live chat.**\\n\\n⏱️ **Average wait time**: 15-30 minutes\\n\\n**Your support ticket ({{ $json.ticketNumber || 'created earlier' }}) is still active and will be answered via email.**\\n\\n📧 **Expected email response**: 2-4 hours\\n\\n**Would you like to:**",
+              "type": "string"
+            },
+            {
+              "id": "no-agent-state",
+              "name": "conversationState",
+              "value": "agent_unavailable",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4d37515a-f712-4ca9-ab25-b3434f539c45",
+      "name": "No Agent Available",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        1080
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE support_agents SET current_sessions = current_sessions + 1 WHERE agent_id = $1",
+        "options": {
+          "queryReplacement": "={{ [$json.agentData.agentId] }}"
+        }
+      },
+      "id": "96970dd6-5a76-4ae0-84f6-e7f8d485f7d8",
+      "name": "Update Agent Session Count",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        200,
+        880
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $json.agentData.notificationUrl || 'https://your-agent-notification-endpoint.com/notify' }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "agentId",
+              "value": "{{ $json.agentData.agentId }}"
+            },
+            {
+              "name": "sessionId",
+              "value": "{{ $json.sessionId }}"
+            },
+            {
+              "name": "customerName",
+              "value": "{{ $json.userData.name || 'Unknown' }}"
+            },
+            {
+              "name": "message",
+              "value": "New customer connected for live chat support"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cb114c32-7ca2-4d36-aeb7-2542be7079c5",
+      "name": "Notify Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "product-intent",
+              "leftValue": "={{ $json.userInput.toLowerCase() }}",
+              "rightValue": "pump|product|need|looking|buy|purchase|gardening|irrigation|residential|commercial|industrial|dewatering|firefighting|agriculture",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a4823715-6fbb-4752-9b1a-eb7086819400",
+      "name": "Detect Product Intent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://betaeshop.kirloskarpumps.com/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "query { categories(filters: {}) { items { id name url_key level children_count children { id name url_key level } } } }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "35e241ad-633f-4c52-a911-90556d918a12",
+      "name": "Get Product Categories",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Main product discovery and category display\nconst response = $input.first().json;\nlet categories = [];\n\nif (response && response.data && response.data.categories && response.data.categories.items) {\n  categories = response.data.categories.items\n    .filter(cat => cat.level === 2 && cat.children_count > 0)\n    .map(cat => ({\n      id: cat.id,\n      name: cat.name,\n      url_key: cat.url_key\n    }));\n}\n\nconst categoryList = categories.map((cat, index) => `${index + 1}. ${cat.name}`).join('\\n');\n\nconst welcomeMessage = `🔧 **Welcome to Kirloskar Brothers Limited!** 🔧\\n\\n` +\n  `I'm your intelligent assistant, ready to help you find the perfect pump for your needs.\\n\\n` +\n  `**🏷️ Our Product Categories:**\\n${categoryList}\\n\\n` +\n  `**💡 You can:**\\n` +\n  `• Type a category name or number\\n` +\n  `• Search by keyword (e.g., \"submersible\")\\n` +\n  `• Ask for specific applications\\n` +\n  `• Get technical support\\n\\n` +\n  `**What type of pump are you looking for?** 🤔`;\n\nreturn {\n  response: welcomeMessage,\n  categories: categories,\n  responseType: 'category_selection',\n  conversationState: 'browsing',\n  showQuickReplies: true,\n  quickReplies: categories.slice(0, 4).map(cat => cat.name).concat(['🆘 Need Help', '👤 Talk to Agent'])\n};"
+      },
+      "id": "fb83d32a-e848-4551-b15a-8bb1f9018b88",
+      "name": "Format Categories Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Intelligent fallback with comprehensive help\nconst userInput = $json.userInput.toLowerCase();\nconst sessionId = $json.sessionId;\n\n// Check for various intents in fallback\nlet fallbackResponse = `🤔 **I didn't quite understand that, but I'm here to help!**\\n\\n`;\n\n// Suggest based on partial matches\nif (userInput.includes('price') || userInput.includes('cost')) {\n  fallbackResponse += `💰 **For pricing information:** Search for products first, then I'll show you prices.\\n\\n`;\n} else if (userInput.includes('install') || userInput.includes('setup')) {\n  fallbackResponse += `🔧 **For installation help:** I can connect you with our technical team.\\n\\n`;\n} else if (userInput.includes('warranty') || userInput.includes('guarantee')) {\n  fallbackResponse += `📜 **For warranty information:** Search for specific products to see warranty details.\\n\\n`;\n}\n\nfallbackResponse += `**🎯 Here's what I can help you with:**\\n\\n`;\nfallbackResponse += `**🔧 Products & Search**\\n`;\nfallbackResponse += `• \"I need a pump for gardening\"\\n`;\nfallbackResponse += `• \"Show me submersible pumps\"\\n`;\nfallbackResponse += `• \"Pumps under ₹10,000\"\\n\\n`;\nfallbackResponse += `**📋 Account & Orders** (after login)\\n`;\nfallbackResponse += `• \"Show my orders\"\\n`;\nfallbackResponse += `• \"Track my order\"\\n`;\nfallbackResponse += `• \"What's in my cart?\"\\n\\n`;\nfallbackResponse += `**🆘 Support & Help**\\n`;\nfallbackResponse += `• \"I need technical help\"\\n`;\nfallbackResponse += `• \"Talk to an agent\"\\n`;\nfallbackResponse += `• \"Contact support\"\\n\\n`;\nfallbackResponse += `**💡 Pro tip:** Be specific about your pump needs - tell me the application, location, or features you're looking for!`;\n\nreturn {\n  response: fallbackResponse,\n  responseType: 'enhanced_fallback',\n  conversationState: 'welcome',\n  showQuickReplies: true,\n  quickReplies: [\n    '🔧 Browse Products',\n    '📋 My Account',\n    '🆘 Technical Help',\n    '👤 Talk to Agent',\n    '📞 Contact Info',\n    '🔍 Search Tips'\n  ]\n};"
+      },
+      "id": "ba2f7efd-7841-4c21-b0e7-f926ffadedcb",
+      "name": "Enhanced Fallback Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        1380
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Session management and response preparation\nconst inputData = $input.first().json;\nconst sessionId = $('Extract Input Data').first().json.sessionId;\nconst currentTimestamp = new Date().toISOString();\n\n// Prepare comprehensive final response\nconst finalResponse = {\n  message: inputData.response,\n  sessionId: sessionId,\n  conversationState: inputData.conversationState || 'welcome',\n  responseType: inputData.responseType || 'text',\n  timestamp: currentTimestamp,\n  botVersion: '2.0-enhanced'\n};\n\n// Add all optional fields with proper validation\nif (inputData.authToken) finalResponse.authToken = inputData.authToken;\nif (inputData.userData && Object.keys(inputData.userData).length > 0) {\n  finalResponse.userData = inputData.userData;\n}\nif (inputData.agentMode !== undefined) finalResponse.agentMode = inputData.agentMode;\nif (inputData.agentData) finalResponse.agentData = inputData.agentData;\nif (inputData.showQuickReplies) finalResponse.showQuickReplies = inputData.showQuickReplies;\nif (inputData.quickReplies && inputData.quickReplies.length > 0) {\n  finalResponse.quickReplies = inputData.quickReplies;\n}\nif (inputData.products && inputData.products.length > 0) {\n  finalResponse.products = inputData.products;\n}\nif (inputData.orders && inputData.orders.length > 0) {\n  finalResponse.orders = inputData.orders;\n}\nif (inputData.cart && Object.keys(inputData.cart).length > 0) {\n  finalResponse.cart = inputData.cart;\n}\nif (inputData.categories && inputData.categories.length > 0) {\n  finalResponse.categories = inputData.categories;\n}\nif (inputData.ticketData) finalResponse.ticketData = inputData.ticketData;\n\n// Add metadata for analytics\nfinalResponse.metadata = {\n  processingTime: Date.now(),\n  nodeCount: Object.keys($workflow).length,\n  hasAuth: !!inputData.authToken,\n  intentDetected: inputData.responseType !== 'enhanced_fallback'\n};\n\nreturn finalResponse;"
+      },
+      "id": "02042af1-7135-4dc2-9137-77f8b04adb9b",
+      "name": "Prepare Enhanced Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "faa6e773-fa1b-4abb-896b-adf1e5a5ff1d",
+      "name": "Send Final Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        180
+      ]
+    }
+  ],
+  "connections": {
+    "Chat Message Received": {
+      "main": [
+        [
+          {
+            "node": "Extract Input Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Input Data": {
+      "main": [
+        [
+          {
+            "node": "Check Agent Mode",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Detect Agent Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Name Collection",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Validate Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Validate Mobile",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Query Collection",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Agent Availability Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Detect Product Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Agent Mode": {
+      "main": [
+        [
+          {
+            "node": "Store Agent Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enhanced Fallback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Agent Message": {
+      "main": [
+        [
+          {
+            "node": "Format Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Agent Request": {
+      "main": [
+        [
+          {
+            "node": "Start Ticket Creation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enhanced Fallback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Ticket Creation": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Name Collection": {
+      "main": [
+        [
+          {
+            "node": "Collect Name",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enhanced Fallback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Name": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Email": {
+      "main": [
+        [
+          {
+            "node": "Collect Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enhanced Fallback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Email": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Mobile": {
+      "main": [
+        [
+          {
+            "node": "Collect Mobile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enhanced Fallback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Mobile": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Query Collection": {
+      "main": [
+        [
+          {
+            "node": "Create Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enhanced Fallback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "Store Ticket in Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Ticket in Database": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Email": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Agent Availability Request": {
+      "main": [
+        [
+          {
+            "node": "Find Available Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enhanced Fallback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Available Agent": {
+      "main": [
+        [
+          {
+            "node": "Check Agent Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Agent Found": {
+      "main": [
+        [
+          {
+            "node": "Connect to Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Agent Available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Connect to Agent": {
+      "main": [
+        [
+          {
+            "node": "Update Agent Session Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Agent Available": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Agent Session Count": {
+      "main": [
+        [
+          {
+            "node": "Notify Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Agent": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Product Intent": {
+      "main": [
+        [
+          {
+            "node": "Get Product Categories",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enhanced Fallback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Product Categories": {
+      "main": [
+        [
+          {
+            "node": "Format Categories Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Categories Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enhanced Fallback Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Enhanced Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Enhanced Response": {
+      "main": [
+        [
+          {
+            "node": "Send Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c765d07a-bc8c-4ab0-b74a-fb6883a13ef8",
+  "triggerCount": 0,
+  "tags": []
+}
