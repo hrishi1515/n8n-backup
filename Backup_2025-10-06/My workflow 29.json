@@ -1,0 +1,497 @@
+ {
+  "createdAt": "2025-07-10T13:06:41.515Z",
+  "updatedAt": "2025-07-10T13:06:41.000Z",
+  "id": "kpsEwbf33MFW1DGA",
+  "name": "My workflow 29",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "16ahWlNwBvd53xFHA4UUh6EbkFd8ogxBv",
+          "mode": "list",
+          "cachedResultName": "Rules_of_Golf_Simplified.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/16ahWlNwBvd53xFHA4UUh6EbkFd8ogxBv/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1020,
+        960
+      ],
+      "id": "7335a7db-7557-46b1-a90a-2546f59e4595",
+      "name": "Download File",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "iKdf7CY3j2tSUk8d",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1580,
+        1100
+      ],
+      "id": "c78b2d52-b5c8-4488-912a-764d04e3a4e1",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        960
+      ],
+      "id": "63c4f3f1-8721-4494-8a00-cb97cb3652a2",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node - Split Golf Rules\n// This code takes the input text and splits it into separate items for each rule\n\n// Get the input text from the first item\nconst inputText = $input.first().json.text;\n\n// Split the text by \"Rule\" pattern, keeping the \"Rule\" text with each section\nconst ruleSections = inputText.split(/(?=Rule \\d+)/);\n\n// Remove the first empty element (everything before the first \"Rule\")\nconst cleanedSections = ruleSections.filter(section => section.trim().startsWith('Rule'));\n\n// Create output items - one for each rule\nconst outputItems = cleanedSections.map((ruleText, index) => {\n  // Extract rule number from the text\n  const ruleMatch = ruleText.match(/Rule (\\d+)/);\n  const ruleNumber = ruleMatch ? ruleMatch[1] : (index + 1).toString();\n  \n  // Extract rule title (everything between \"Rule X –\" and the first numbered item)\n  const titleMatch = ruleText.match(/Rule \\d+ – (.+?)(?=\\n1\\.|\\n\\d+\\.)/);\n  const ruleTitle = titleMatch ? titleMatch[1].trim() : 'Unknown Rule';\n  \n  return {\n    json: {\n      ruleNumber: ruleNumber,\n      ruleTitle: ruleTitle,\n      fullText: ruleText.trim(),\n      originalIndex: index\n    }\n  };\n});\n\nreturn outputItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        960
+      ],
+      "id": "3a3dfede-2cf5-4969-bdc3-2e1563c1786e",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        840,
+        100
+      ],
+      "id": "b9f76e79-ed92-4639-95a8-f2b85b7ebf5c",
+      "name": "When chat message received",
+      "webhookId": "79772045-628b-4cf6-b2ec-cecceca9fe24"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        240
+      ],
+      "id": "8909cda4-3661-4edd-ace8-d8b2b0ebb11a",
+      "name": "GPT 4.1-mini",
+      "credentials": {
+        "openRouterApi": {
+          "id": "JQBB70DLIymJKhfR",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        240
+      ],
+      "id": "16facc72-c37f-47ea-b4ea-3f5b703e5b21",
+      "name": "Reranker Cohere",
+      "credentials": {}
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1500,
+        960
+      ],
+      "id": "080785a5-6fc2-4506-a79e-4fc091b69967",
+      "name": "Upload to Supabase",
+      "credentials": {}
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1480,
+        100
+      ],
+      "id": "1b41c676-e46a-4891-b240-a805ffd6e8d6",
+      "name": "Supabase Vector Store",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        680
+      ],
+      "id": "42d112a8-2650-48c7-b85a-beeddb551543",
+      "name": "GPT 4.1-mini1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        660
+      ],
+      "id": "580a5f39-03b2-4212-ad24-4ff8ef11e6ac",
+      "name": "Reranker Cohere1",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1740,
+        660
+      ],
+      "id": "383a33a1-b092-480c-9af0-6ab8dd39b7d6",
+      "name": "Embeddings OpenAI2"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1740,
+        520
+      ],
+      "id": "e37349ab-25a8-45b9-a5e7-de6a2065f64b",
+      "name": "Supabase Vector Store1",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "content": "# Vectorize Document w/ Metadata\n(this code node is set up for the golf rules PDF specifically)",
+        "height": 440,
+        "width": 1000,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        800,
+        820
+      ],
+      "id": "72dadd7b-c49d-4944-8429-079481053a34",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# RAG Agent\n",
+        "height": 380,
+        "width": 620,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        800,
+        0
+      ],
+      "id": "14d0a81f-e80b-4254-93cf-132dba78336f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Vector Store w/ Reranker\n",
+        "height": 380,
+        "width": 380,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1420,
+        0
+      ],
+      "id": "1977d229-2e50-42a4-a5b5-7733f666a604",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1420,
+        1100
+      ],
+      "id": "afdeaf71-0963-42c6-bfec-fdb845aff84e",
+      "name": "Embeddings OpenAI1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1480,
+        240
+      ],
+      "id": "01f614c7-db0b-4925-91e1-905721f1350a",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=# Overview\nYour job is to understand the rule number that the human is requesting and output only the number.\n\n## Example\nInput - what's rule number 27?\nOutput - 27"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        900,
+        520
+      ],
+      "id": "55c636eb-d23c-4b1a-bb6c-5e8a18d1853d",
+      "name": "Metadata Agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=# Overview\nYou are an AI agent who is an expert at the rules of golf. You will receive a question from the human, and you must use your tool called \"Supabase Vector Store\" in order to retrieve information from the database to make sure you are answering the question accurately. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        100
+      ],
+      "id": "3aaa9d23-2159-4629-8ed2-d6f080bfecb7",
+      "name": "RAG Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are an AI agent who is an expert at the rules of golf. You will receive a question from the human, and you must use your tool called \"Supabase Vector Store\" in order to retrieve information from the database to make sure you are answering the question accurately. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        520
+      ],
+      "id": "6804e980-ceab-423a-9cb0-2f4f37784ef3",
+      "name": "RAG Agent 2"
+    },
+    {
+      "parameters": {
+        "content": "# RAG Agent\n",
+        "height": 400,
+        "width": 440,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        400
+      ],
+      "id": "dfa9ee3a-8024-4a1a-ad45-2ec0afb77d7b",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Vector Store w/ Reranker & Metadata\n",
+        "height": 400,
+        "width": 380,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        400
+      ],
+      "id": "45beac34-0fe0-46bd-930f-b62f78b3ec92",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# Metadata Agent\n",
+        "height": 400,
+        "width": 440,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        800,
+        400
+      ],
+      "id": "8df70f6b-3979-4acb-9fed-1b399beebc5e",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        880,
+        960
+      ],
+      "id": "0618badb-7278-4077-b970-e221afad4614",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "content": "# 🛠️ Setup Guide  \n**Author:** [Nate Herk](https://www.youtube.com/@nateherk)\n\nFollow the steps below to get your Retrieval-Augmented Generation (RAG) workflow up and running:\n\n### ✅ Step 1: Connect Your [Supabase](https://supabase.com/) Vector Store  \nEnsure your Supabase instance is ready and accessible. This will store your embedded documents with metadata.\nHere is a [video tutorial](https://youtu.be/JjBofKJnYIU) on setting that up.\n\n### ✅ Step 2: Connect Your [OpenAI](https://platform.openai.com/account/api-keys) Embeddings  \nUse the `text-embedding-3-small` or similar model for embedding your documents. Make sure your API key is active.\n\n### ✅ Step 3: Connect Your [OpenAI API Key](https://platform.openai.com/account/api-keys)  \nThis powers your embedding generation model. Add it via the HTTP Request node or a credential.\n\n### ✅ Step 4: Add Your [OpenRouter](https://openrouter.ai/) API Key  \nUse this for your main RAG agent—add your key via HTTP request or credential node.\n\n### ✅ Step 5: Connect a [Cohere](https://dashboard.cohere.com/api-keys) Re-Ranker  \nThe re-ranker improves answer quality. Add your API key for better relevance ranking on retrieved documents.\n\n### ✅ Step 6: Vectorize Documents with Metadata  \nEnsure your data ingestion process tags documents with meaningful metadata before vectorization. This helps with structured retrieval.\n\n### 💬 Final Step: Start Chatting  \nPrompt your agent and test the RAG flow end-to-end—watch it pull context-rich answers from your vector store.\n",
+        "height": 800,
+        "width": 700
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        0
+      ],
+      "id": "790ee705-0703-4135-9d8b-d191f8d1b94c",
+      "name": "Sticky Note6"
+    }
+  ],
+  "connections": {
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "RAG Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 4.1-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 4.1-mini1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG Agent 2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Metadata Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Metadata Agent": {
+      "main": [
+        [
+          {
+            "node": "RAG Agent 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "a09bf536-820b-43b0-b2eb-98f9633fff27",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-07-10T13:06:41.520Z",
+      "updatedAt": "2025-07-10T13:06:41.520Z",
+      "role": "workflow:owner",
+      "workflowId": "kpsEwbf33MFW1DGA",
+      "projectId": "dG371lM6unPJd2qz"
+    }
+  ],
+  "tags": []
+}
