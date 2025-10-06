@@ -1,0 +1,633 @@
+ {
+  "createdAt": "2025-10-05T08:38:37.355Z",
+  "updatedAt": "2025-10-05T08:45:22.000Z",
+  "id": "b5nwT1LQUkBLqRda",
+  "name": "product_card_with_file_upload",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {}
+      },
+      "id": "227d64c8-0ead-4405-b3dc-f636215367b4",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        32,
+        384
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Agent Tools for RAG",
+        "height": 528.85546469693,
+        "width": 583.4552380860637,
+        "color": 4
+      },
+      "id": "226333f6-d124-498f-8790-bfe769b32b05",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        768,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$json.sessionId}} {{$json.chatId}}"
+      },
+      "id": "d71caa95-a089-45fb-90ef-7745cc162f94",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        144,
+        400
+      ],
+      "notesInFlow": false,
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## RAG AI Agent with Chat Interface",
+        "height": 464.8027193303974,
+        "width": 1035.6381264595484
+      },
+      "id": "91dfc4a2-ffbf-4f6d-8280-8aae875a28d5",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7e08a8c1-b57f-4f1f-aac2-d3a1d0a90f19",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a9a245e-f1a1-4282-bb02-a81ffe629f0f",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "b80831d8-c653-4203-8706-adedfdb98f77",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7313bf44-1638-4fc0-980d-1a872efadd97",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -304,
+        400
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }} {{ $json.message }}",
+        "options": {
+          "systemMessage": "=You are a specialized assistant for retrieving information about pumps from the company named  KBL. You help users find pumps based on their application, pricing, and specifications using both unstructured documents (TXT, DOCX, extracted PDFs) and structured tabular data (CSVs, Excel, JSONB in PostgreSQL).\n\n📌 HR Policies Retrieval\n\nIf you recive any text here {{ $json.text }} . That means user has uploaded a file and when user asks anything in the file answer it using the text data .\n\nIf the user query is about any HR policy (e.g., leave policy, travel policy, reimbursement policy, work from home, PLIP, appraisal, dress code, etc.):\n\n- Immediately return the plain user query as the tool input.  \n- Do NOT wrap it in `{ \"query\": ... }`.  \n- Do NOT add any other keys or JSON structure.  \n- The output must be just the plain text:  Tell me about PLIP policy\n\n- This text will be passed directly to the Embeddings tool.\n\n- Then the Embeddings tool generates a vector, and the Supabase Vector Store will run the similarity match.\n\n- If no good answer is found, reply:  \n**\"I couldn’t find this policy detail in our HR documents. Please check with HR or contact your manager for clarification.\"**\n\n\nSearch Strategy:\nUser Query Analysis\n\nIf a user asks for \"pumps\" or \"water pumps\" or \"another pumps\" without specifying the application, prompt them to clarify the intended use by suggesting options such as:\nGardening\nIrrigation\nResidential Pressure Boosting\nCommercial & Industrial Use\nDewatering\nFirefighting\nAgriculture\nor any other application of your use case\nOnce the user specifies the application, refine the search accordingly.\ncollect essential information before recommending a product.\nIf the user specifies an application (even if it's not in the predefined list), attempt to search for it dynamically:\nFirst, search in the structured table (document_rows) using SQL to find pumps where the row_data->>'categories' or row_data->>'description' contains the specified application.\nIf no results are found, attempt a RAG-based search on text-based documents.\nIf the query involves pricing, specifications, or comparisons, execute SQL queries to filter the pumps accordingly.\nInformation Retrieval Methods:\n\nGeneral Pump Information (Applications, Features, Descriptions): Use RAG (Retrieval-Augmented Generation) to extract relevant content from the documents table.\nSpecific Pump Details (Pricing, Filtering, Comparisons): Generate SQL queries using a specialized SQL-generation tool to search structured product data from the document_rows table.\nHybrid Search: Combine both approaches when necessary.\n\nSQL Query Generation for Structured Search:\nSQL Query Generation Rules:\nTable: document_rows\nProduct Data is stored in a JSONB field (row_data), so extract values like this:\nrow_data->>'name' → Product name\nrow_data->>'price' → Regular price\nrow_data->>'special_price' → Discounted price\nrow_data->>'categories' → Product categories or application\nrow_data->>'description' → Detailed product overview and also contains application\nrow_data->>'url_key' → Product URL key (for generating product links)\nUse ILIKE for searches to make them case-insensitive.\n\nUser Interaction Flow:\nWorkflow:\nAlways attempt RAG first, unless the query explicitly requires filtering by price, category, or application.\nIf RAG does not yield relevant results, check available documents in the document_metadata table to find the most relevant ones.\nFor tabular data, construct SQL queries to search the document_rows table, using JSONB field extraction.\nIf the user asks for a product by application, generate an SQL query that searches the \"categories\" and \"description\" fields in the row_data (JSONB) column of the document_rows table.\nIf the user asks for pricing-related queries (e.g., \"pumps under $5,000\"), filter results based on price.\nIf the user requests sorting (e.g., cheapest, most expensive), adjust the query accordingly.\n\nTo truly find products closest to a given target price, if user asks to find pump price around 30000\nuse ORDER BY absolute difference, like this:\nSELECT row_data->>'name' AS name,\n       row_data->>'price' AS price,\n       row_data->>'categories' AS application,\n       row_data->>'url_key' AS url_key\nFROM document_rows\nORDER BY ABS((row_data->>'price')::numeric - 30000)\nLIMIT 3;\nReturn only the first 3 matching pumps.\n\n📌 Horsepower, Voltage, Phase, and Size Filtering\n\n- If the user asks for a pump with:\n  - a **specific horsepower** (e.g. “3 HP”),\n  - a **specific voltage** (e.g. “415 Volts”),\n  - a **specific phase** (e.g. “Single Phase”, “3 Phase”, “Three Phase”),\n  - or a **specific size** (e.g. “25 mm”, “100mm X 100mm”),\n\n✅ The SQL query MUST search for these details inside BOTH the `name` field AND the `description` field.\n\n✅ For each filter:\n- Use an OR condition for each field:\n  - Example for horsepower:  \n    `(row_data->>'name' ILIKE '%3 HP%' OR row_data->>'description' ILIKE '%3 HP%')`\n  - Example for voltage:  \n    `(row_data->>'name' ILIKE '%415 Volts%' OR row_data->>'description' ILIKE '%415 Volts%')`\n  - Example for phase:  \n    `(row_data->>'name' ILIKE '%Single Phase%' OR row_data->>'description' ILIKE '%Single Phase%')`\n  - Example for size:  \n    `(row_data->>'name' ILIKE '%25 mm%' OR row_data->>'description' ILIKE '%25 mm%')`\n\n✅ Combine multiple filters with **AND**:\n- If the user specifies more than one (e.g. “2 HP”, “Single Phase”, “210 Volts”), combine all in the WHERE clause.\n\nIf the user asks for a specific horsepower like “5 HP”, use a regex WHERE condition with word boundaries to avoid matching “1.5 HP”, “0.5 HP”, etc.\nUse:\nWHERE row_data->>'name' ~* '(^|[ ,\\-])5 HP($|[^0-9])'\n\n\n✅ This guarantees exact matches only.\n\nFallback:\nIf no rows are returned from the SQL query:\n- Immediately pass the same user query to the HTTP Request node.\n- The HTTP Request node will call the RAG-based API (`/chat/stream`) to find possible answers from unstructured documents.\n- Return the result from the HTTP Request node to the user.\n- If the fallback still finds no relevant data, clearly inform the user and offer human support if needed.\n\n\nResponse Format:\nIf using RAG, provide pump details in a structured way.\nIf using SQL, return a concise list of the top 3 pumps\n\nPresent each product like this:\n**{Product Name}**  \n💰 **Price**: ₹{price}  \n🔧 **Application**: {one-line summary or description}  \n🔗 **Product Link**: (url_key) (display the entire link )\n\n\nFormula:\nlink =  url_key \nTransparency: If no relevant results are found, inform the user instead of making assumptions.\nHandling Unanswered or Non-Pump Queries:\nIf a user asks for human support or query is not related to pumps or no relevant data is found, provide the contact details and toll-free number.\n📞 Toll-Free Number: 1800-123-4443\n🏢 Office Address:\nKirloskar Brothers Limited\nYamuna, S.No.98(3 to 7), Plot No.3,\nBaner, Pune 411045, Maharashtra, INDIA\n🔗 Visit our website: https://www.kirloskarpumps.com\n\n"
+        }
+      },
+      "id": "b32ef7d9-5bac-4c77-bd78-1988f401f572",
+      "name": "RAG AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        240,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to fetch all available documents, including the table schema if the file is a CSV or Excel file.",
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "document_metadata",
+          "mode": "list",
+          "cachedResultName": "document_metadata"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        288,
+        432
+      ],
+      "id": "9a99fcf7-7d82-4a10-a9af-342cc6593487",
+      "name": "List Documents",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Given a file ID, fetches the text from the document.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    string_agg(content, ' ') as document_text\nFROM documents\n  WHERE metadata->>'file_id' = $1\nGROUP BY metadata->>'file_id';",
+        "options": {
+          "queryReplacement": "={{ $fromAI('file_id') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        384,
+        384
+      ],
+      "id": "5a7f7ca5-5dd2-4004-ba55-a8fd915847d0",
+      "name": "Get File Contents",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "You are an AI assistant that generates SQL queries to search a PostgreSQL database storing product information in a JSONB field (row_data). The table structure is as follows:\nTable: document_rows\nPrimary Key: dataset_id (File ID)\nProduct Data: Stored in row_data (JSONB)\nImportant Product Fields:\nname → Product name\nprice → Regular price\nspecial_price → Discounted price\ndescription → Detailed product overview\ncategories → Product categories\nQuery Logic:\nIf the user asks for products by category, use case, or application (e.g., \"I need a pump for gardening, commercial, or irrigation purposes\"), generate a query that searches both description and categories for relevant keywords.\nIf the user asks for price-related queries (e.g., \"Show me products under $10,000\"), filter based on price.\n\nIf the user asks for a specific product by SKU or name, return exact matches.\nIf the user requests sorting (e.g., cheapest, most expensive,etc), modify the query accordingly.\nfind out only the first 7 or top 7 pumps",
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('sql_query') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        528,
+        384
+      ],
+      "id": "1c12edd4-bd30-481c-9ffd-323726172013",
+      "name": "Query Document Rows",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "documents",
+        "toolDescription": "=Use RAG to look up information in the knowledgebase.\nif you do not receive any input query  use  {{ $('When chat message received').item.json.chatInput }}",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        768,
+        144
+      ],
+      "id": "6a1734de-6292-4984-9ef3-036152f5e129",
+      "name": "Supabase Vector Store1",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "XtR98lBtev9Z8OTI",
+          "name": "Supabase account 3"
+        }
+      },
+      "disabled": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        352
+      ],
+      "id": "dffdf520-07d9-450c-8897-4e40010ebd88",
+      "name": "Embeddings OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://35.209.52.119:8059/chat/stream",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            },
+            {
+              "name": "user_id",
+              "value": "web_user"
+            },
+            {
+              "name": "search_type",
+              "value": "hybrid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1184,
+        640
+      ],
+      "id": "e24a3384-c12b-4b15-bc74-cbc4f48754bf",
+      "name": "HTTP Request",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "toolDescription": "Makes an HTTP request and returns the response data.\ncompulsarily run this node when query document row node dont find any product .",
+        "method": "POST",
+        "url": "http://35.209.52.119:8059/chat",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            },
+            {
+              "name": "session_id",
+              "value": "543ab237-08ae-4fc9-bf6c-8930cf766352"
+            },
+            {
+              "name": "user_id",
+              "value": "web_user"
+            },
+            {
+              "name": "search_type",
+              "value": "hybrid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        688,
+        384
+      ],
+      "id": "a6b7fc0d-d4be-4b1c-afed-0a060c3bfa17",
+      "name": "HTTP Request1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "toolDescription": "Makes an HTTP request and returns the response data.\ncompulsarily run this node when query document row node dont find any product .",
+        "method": "POST",
+        "url": "http://35.209.52.119:8060/chat",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            },
+            {
+              "name": "user_id",
+              "value": "web_user"
+            },
+            {
+              "name": "search_type",
+              "value": "vector"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        384
+      ],
+      "id": "5eada2ee-fcde-4302-a595-ee5eaf9ab675",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {
+          "allowFileUploads": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        144
+      ],
+      "id": "b5f98444-1aa0-4322-8446-85f99db19736",
+      "name": "When chat message received",
+      "webhookId": "efd804b9-28bd-4fa2-8f50-3a912740baf0"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2c6a7e3d-4947-4a9e-8fcc-a5ff519770df",
+              "leftValue": "={{ $json.files[0] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -256,
+        144
+      ],
+      "id": "c1f67fda-76d3-4b34-9410-db3a62a45758",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "data0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "364b31b3-6e82-4b71-91c2-6d5256cdafd3",
+      "name": "Extract from File"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Documents": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File Contents": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Document Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "b7ef631d-ba99-40b3-a407-8f21fd3ea59a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-10-05T08:38:37.361Z",
+      "updatedAt": "2025-10-05T08:38:37.361Z",
+      "role": "workflow:owner",
+      "workflowId": "b5nwT1LQUkBLqRda",
+      "projectId": "dG371lM6unPJd2qz"
+    }
+  ],
+  "tags": []
+}
