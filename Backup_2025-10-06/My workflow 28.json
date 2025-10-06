@@ -1,0 +1,460 @@
+ {
+  "createdAt": "2025-07-09T12:47:08.342Z",
+  "updatedAt": "2025-07-09T15:38:36.000Z",
+  "id": "huUNYWQWhBy4Trb9",
+  "name": "My workflow 28",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "4bfe91b5-77c0-430f-bc38-1acaf47f80f6",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        360
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Agent Tools for RAG",
+        "height": 528.85546469693,
+        "width": 583.4552380860637,
+        "color": 4
+      },
+      "id": "d76fa7fd-8c6b-4355-a9d8-6d31766741fe",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        260,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## RAG AI Agent with Chat Interface",
+        "height": 464.8027193303974,
+        "width": 1035.6381264595484
+      },
+      "id": "7b3d9ef0-58b8-479b-9272-0e238902af6a",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "614205b2-331a-4045-9c0e-aa5919c8ad64",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -200,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a9a245e-f1a1-4282-bb02-a81ffe629f0f",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "b80831d8-c653-4203-8706-adedfdb98f77",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c7cf83e7-1419-4e35-be82-d56fc08ee231",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -740,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a specialized assistant for retrieving information about pumps from the company named  KBL. You help users find pumps based on their application, pricing, and specifications using both unstructured documents (TXT, DOCX, extracted PDFs) and structured tabular data (CSVs, Excel, JSONB in PostgreSQL).\n\nSearch Strategy:\nUser Query Analysis\n\nIf a user asks for \"pumps\" or \"water pumps\" or \"another pumps\" without specifying the application, prompt them to clarify the intended use by suggesting options such as:\nGardening\nIrrigation\nResidential Pressure Boosting\nCommercial & Industrial Use\nDewatering\nFirefighting\nAgriculture\nor any other application of your use case\nOnce the user specifies the application, refine the search accordingly.\ncollect essential information before recommending a product.\nIf the user specifies an application (even if it's not in the predefined list), attempt to search for it dynamically:\nFirst, search in the structured table (document_rows) using SQL to find pumps where the row_data->>'categories' or row_data->>'description' contains the specified application.\nIf no results are found, attempt a RAG-based search on text-based documents.\nIf the query involves pricing, specifications, or comparisons, execute SQL queries to filter the pumps accordingly.\nInformation Retrieval Methods:\n\nGeneral Pump Information (Applications, Features, Descriptions): Use RAG (Retrieval-Augmented Generation) to extract relevant content from the documents table.\nSpecific Pump Details (Pricing, Filtering, Comparisons): Generate SQL queries using a specialized SQL-generation tool to search structured product data from the document_rows table.\nHybrid Search: Combine both approaches when necessary.\nSQL Query Generation for Structured Search:\nSQL Query Generation Rules:\nTable: document_rows\nProduct Data is stored in a JSONB field (row_data), so extract values like this:\nrow_data->>'name' → Product name\nrow_data->>'price' → Regular price\nrow_data->>'special_price' → Discounted price\nrow_data->>'categories' → Product categories or application\nrow_data->>'description' → Detailed product overview and also contains application\nrow_data->>'url_key' → Product URL key (for generating product links)\nUse ILIKE for searches to make them case-insensitive.\n\nUser Interaction Flow:\nWorkflow:\nAlways attempt RAG first, unless the query explicitly requires filtering by price, category, or application.\nIf RAG does not yield relevant results, check available documents in the document_metadata table to find the most relevant ones.\nFor tabular data, construct SQL queries to search the document_rows table, using JSONB field extraction.\nIf the user asks for a product by application, generate an SQL query that searches the \"categories\" and \"description\" fields in the row_data (JSONB) column of the document_rows table.\nIf the user asks for pricing-related queries (e.g., \"pumps under $5,000\"), filter results based on price.\nIf the user requests sorting (e.g., cheapest, most expensive), adjust the query accordingly.\nReturn only the first 3 matching pumps.\nResponse Format:\nIf using RAG, provide pump details in a structured way.\nIf using SQL, return a concise list of the top 3 pumps, including:\nName\nPrice (it is in rupees)\nApplication\nProduct Link → url_key\nFormula:\nlink =  url_key \nTransparency: If no relevant results are found, inform the user instead of making assumptions.\nHandling Unanswered or Non-Pump Queries:\nIf a user asks for human support or query is not related to pumps or no relevant data is found, provide the contact details and toll-free number.\n📞 Toll-Free Number: 1800-123-4443\n🏢 Office Address:\nKirloskar Brothers Limited\nYamuna, S.No.98(3 to 7), Plot No.3,\nBaner, Pune 411045, Maharashtra, INDIA\n🔗 Visit our website: https://www.kirloskarpumps.com"
+        }
+      },
+      "id": "8aa16794-21b4-4188-b623-d5f51c1c7b13",
+      "name": "RAG AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -520,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to fetch all available documents, including the table schema if the file is a CSV or Excel file.",
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "document_metadata",
+          "mode": "list",
+          "cachedResultName": "document_metadata"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        -400,
+        420
+      ],
+      "id": "3f5a7448-4c29-481a-b4fe-de13b31210e8",
+      "name": "List Documents",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Given a file ID, fetches the text from the document.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    string_agg(content, ' ') as document_text\nFROM documents\n  WHERE metadata->>'file_id' = $1\nGROUP BY metadata->>'file_id';",
+        "options": {
+          "queryReplacement": "={{ $fromAI('file_id') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        -300,
+        360
+      ],
+      "id": "3f76b4ad-f5dd-472d-9ba6-649452158a2a",
+      "name": "Get File Contents",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "You are an AI assistant that generates SQL queries to search a PostgreSQL database storing product information in a JSONB field (row_data). The table structure is as follows:\nTable: document_rows\nPrimary Key: dataset_id (File ID)\nProduct Data: Stored in row_data (JSONB)\nImportant Product Fields:\nname → Product name\nprice → Regular price\nspecial_price → Discounted price\ndescription → Detailed product overview\ncategories → Product categories\nQuery Logic:\nIf the user asks for products by category, use case, or application (e.g., \"I need a pump for gardening, commercial, or irrigation purposes\"), generate a query that searches both description and categories for relevant keywords.\nIf the user asks for price-related queries (e.g., \"Show me products under $10,000\"), filter based on price.\nIf the user asks for a specific product by SKU or name, return exact matches.\nIf the user requests sorting (e.g., cheapest, most expensive,etc), modify the query accordingly.\nfind out only the first 7 or top 7 pumps",
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('sql_query') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        -200,
+        340
+      ],
+      "id": "a316e245-89bf-454a-9691-dc859d31ba9b",
+      "name": "Query Document Rows",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "documents",
+        "toolDescription": "Use RAG to look up information in the knowledgebase.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        260,
+        100
+      ],
+      "id": "7b4c25b5-3db7-4165-87f2-f00c0ff2801c",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "e7A13j05yIr5nwyM",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        320
+      ],
+      "id": "5bf10adb-7f85-4282-ae17-baee6398ab93",
+      "name": "Embeddings OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1080,
+        140
+      ],
+      "id": "344cec02-ce7a-4fc3-b65d-f777bbdc2118",
+      "name": "When chat message received",
+      "webhookId": "a275e9dc-5e99-46f2-aa7d-b9de6e988522"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -560,
+        380
+      ],
+      "id": "07557393-9279-4422-bbb5-d82a61cb0a67",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-chat-data.chatData",
+      "typeVersion": 1,
+      "position": [
+        -1220,
+        300
+      ],
+      "id": "aab9607b-c9d1-4c72-ba6d-beb04bc232aa",
+      "name": "Chat Data",
+      "credentials": {
+        "chatDataApi": {
+          "id": "nb5qRYQ9NUDwJeeq",
+          "name": "Chat Data account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * INPUT expected in the item that arrives here:\n * {\n *   \"sessionId\": \"13af3c0d203742098ea54adb0563f53a\",\n *   \"chatInput\": \"hi from curl/Postman\"\n * }\n */\nawait $chat.sendMessage({\n  sessionId: $('When chat message received').first().json.sessionId,   // same conversation\n  role:      'user',            // or 'assistant'\n  content:   $('When chat message received').first().json.chatInput    // text to display\n});\n\n// Pass data through unchanged (optional)\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        220
+      ],
+      "id": "2d411876-f8b4-477f-a7ad-d2ff74588773",
+      "name": "Code"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Documents": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File Contents": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Document Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Data": {
+      "main": [
+        []
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "55ed75f9-e78f-413b-8b15-fa781496cbac",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-07-09T12:47:08.347Z",
+      "updatedAt": "2025-07-09T12:47:08.347Z",
+      "role": "workflow:owner",
+      "workflowId": "huUNYWQWhBy4Trb9",
+      "projectId": "dG371lM6unPJd2qz"
+    }
+  ],
+  "tags": []
+}
