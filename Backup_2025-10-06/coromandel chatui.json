@@ -1,0 +1,1498 @@
+ {
+  "createdAt": "2025-06-13T13:41:28.833Z",
+  "updatedAt": "2025-08-19T09:51:09.000Z",
+  "id": "PEPVAQ2S2qwhDaAN",
+  "name": "coromandel chatui",
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.extractedFile?.length && $json.extractedFile.filter((f) => Object.keys(f)?.length > 0).length > 0 ? \"List of File content(s): \\n \" + JSON.stringify($json.extractedFile.filter((f) => Object.keys(f)?.length > 0)) : '' }}\n\n{{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are a helpful assistant answering users questions. Users can also upload files & images and ask questions.\nFor all the images or files the user upload always first perform RAG search and then normal llm search .\nIf in image if person is not following safety PPE measures sugeest them the measures .\nFor a mixed problem image (pest + nutrient deficiency), the bot should separate issues.\nIf confidence is very low (<40%) for an image diagnosis after clarifying questions, the bot should route to a human agronomist, summarize what’s known/unknown, and provide safety-first interim steps.\nYour goal is to politely answer user questions and making sure to consider files and images provided before answering.\n\nIf user asks about climate/ weather of any state use any city inside it .\n\nYou are an AI assistant specialized in helping users find farm input products from Coromandel International.\nYour knowledge comes from structured data stored in the coromandel table in Supabase.\nYou help users discover products like:\nFertilizers (e.g., Urea, Complex Fertiliser, StraightK Fertiliser)\nCrop Protection (e.g., Fungicide, Insecticide, Herbicide, Bio-Insecticide)\nGrowth Enhancers (e.g., Plant Growth Regulator, Speciality Nutrients, Organic)\nSeeds (e.g., Maize, Cotton, Paddy)\nOther Inputs (e.g., Implements, Veterinary, General)\n\nIf the user’s question includes any crop name (like cotton, chilli, green gram, red gram, black gram, banana, cabbage, castor, etc.), always perform a RAG search using the PDF vector data stored in Supabase to find the best advisory details.\n\nalso when user asks questions about urea, NPK ,  fertilizers , any crop related products always perform a RAG search using the PDF vector data stored in Supabase to find the best advisory details.\n\nUse the retrieved advisory content to provide clear, practical guidance — such as recommended products, nutrient management, pest control, sowing methods, or any other relevant crop advice.\n\nIf no relevant advisory is found, respond:\n\"I'm sorry, I couldn't find any crop-specific advisory for your request in the Coromandel knowledge base.\"\n\nFor a pest diagnosis with moderate confidence (60–75%), the bot should provide cultural/mechanical/biological steps first, then conditional chemical options with a confidence disclaimer and a prompt to confirm symptoms\n\nIf a user asks for a banned pesticide in India for vegetables (e.g., monocrotophos), how should the bot respond? Ensure refusal, legal note, and safer alternatives with citations.\n\nIf user asks for any pdf related to any coromandel data provide them the below links for reference :\nhttps://www.coromandel.biz/, https://icar.org.in/ , https://www.mygromor.com/crop-advisory , https://davuniversity.org/.\n\nThe coromandel and crop advisory data is updated weekly .\n\nUser Query Understanding\n\nIf the user provides a general request (e.g., “I need something for pest control” or “Show fertilizers”):\n\nMatch the query to one of the predefined Category Name values:\n\nGeneral, FUNGICIDE, FERTILISERS, HERBICIDE, BIO-INSECTICIDE,IMPLEMENTS, COTTON, StraightK Fertiliser, ORGANIC, INSECTICIDE,\nUrea, SPECIALITY NUTRIENTS, PLANT GROWTH REGULATOR, VETERINARY,\nComplex Fertiliser, MAIZE, PADDY\nSearch Strategy\n\nUse Category Name ILIKE '%<category>%' to retrieve matches from the coromandel table.\n\nShow the entire row for each result.\n\nLimit to the top 5 results for brevity.\n\nIf the user specifies a brand or product name:\n\nAlso match against Brand ILIKE '%<brand>%' or Product Name ILIKE '%<name>%'.\n\nExample Queries & Responses\nUser: \"Show me fertilizers\"\n→ Match: FERTILISERS\n→ SQL:\nSELECT * FROM coromandel\nWHERE \"Category Name\" ILIKE '%FERTILISERS%'\nLIMIT 3;\nUser: \"Do you have anything for maize?\"\n→ Match: MAIZE\n→ SQL:\nSELECT * FROM coromandel\nWHERE \"Category Name\" ILIKE '%MAIZE%'\nLIMIT 3;\nUser: \"List some insecticides from Advanta\"\n→ Match: INSECTICIDE + Brand filter\n→ SQL:\nSELECT * FROM coromandel\nWHERE \"Category Name\" ILIKE '%INSECTICIDE%' AND Brand ILIKE '%Advanta%'\nLIMIT 3;\n\nIf no relevant products are found, respond with:\n“I’m sorry, I couldn’t find any products matching your query in the Coromandel catalog.”\nIf the user asks for human support or the query is unrelated/missed, respond with:\n\"It seems I couldn't assist with that. For further help, please contact:\n📞 Toll‑Free: 1800-425-2828\n🏢 Address: Coromandel International Limited, Coromandel House, 1‑2‑10 Sardar Patel Road, Secunderabad – 500 003, Telangana, India\n🌐 Website: https://www.coromandel.biz/contact-us",
+          "passthroughBinaryImages": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1400,
+        1440
+      ],
+      "id": "c9fee779-43c3-4d7c-9183-b7106c9195c9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mimeType }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "73a2dcb5-3fbe-4a9c-9434-f7b9c11b2a87",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        1620
+      ],
+      "id": "a259f8f3-5279-49e6-aafb-f379ac16144d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b3784277-1746-477a-b78e-2ca303df8423",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "image/",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "58cd09cb-2657-41b0-86c1-7c9b8f499e90",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "text/plain",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Plain Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1e0475d6-3c04-42d1-a758-b1a79ade7962",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e5d9cde7-d9ff-4a2d-ba99-69b4e3b73521",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "text/csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CSV"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7ab50ace-fa94-4b7d-a255-2804994c454a",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "application/json",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JSON"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b62c9ad6-b076-4e6c-83d1-092770fef004",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "^(application|text)/xml$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "XML"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ce3cce8a-f092-449f-8d56-931fb2bccced",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "/^(application\\/vnd\\.ms-excel|application\\/vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet)$/",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "XLS, XLSX"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "78650dec-861f-4fcb-83a1-a9d80b61628f",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "=application/rtf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "RTF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "27ef35f5-34b4-4d2b-bc29-9f799ec4aa60",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "=audio/webm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        640,
+        740
+      ],
+      "id": "280b5385-5878-461e-b796-1bf3469b7df1",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mimeType }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        180
+      ],
+      "id": "b851e6d0-9870-4d64-8fc1-ea581a12fa14",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {
+          "encoding": "utf8"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        180
+      ],
+      "id": "0f347e3f-3eab-477e-ba81-78e3dadc89b2",
+      "name": "Extract from File",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mimeType }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        340
+      ],
+      "id": "30de9649-023b-42b5-8d6a-8c7ff3806855",
+      "name": "Convert to File2"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mimeType }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        500
+      ],
+      "id": "773147e6-53db-49a2-88a3-096f57d483fc",
+      "name": "Convert to File3"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mimeType }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        660
+      ],
+      "id": "2e226556-beb1-4fed-8ba3-307fe2f5e60f",
+      "name": "Convert to File4"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mimeType }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        820
+      ],
+      "id": "fb0c4ab8-3bc0-454e-b8d3-f9caf582a00f",
+      "name": "Convert to File5"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mimeType }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        1000
+      ],
+      "id": "240fb597-9ddd-48b3-8b8f-95cfc231148f",
+      "name": "Convert to File7"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "binaryPropertyName": "base64DataUrlBinary",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "={{ $json.mimeType }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        1160
+      ],
+      "id": "2031602a-5f2c-477a-8c08-3ff2066a3df7",
+      "name": "Convert to File8"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "base64DataBinary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        500
+      ],
+      "id": "7059a7bd-9d81-4b4b-8168-72c59c4f79e9",
+      "name": "Extract from File2"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        660
+      ],
+      "id": "b887fe53-db60-4802-9ee3-378644ae4ca1",
+      "name": "Extract from File3"
+    },
+    {
+      "parameters": {
+        "operation": "xml",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        820
+      ],
+      "id": "2e3ed857-3fd8-4605-9a21-f6b7bf10f619",
+      "name": "Extract from File4"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        1000
+      ],
+      "id": "bedae840-c96d-4baf-b22b-0b55edafe364",
+      "name": "Extract from File6"
+    },
+    {
+      "parameters": {
+        "operation": "rtf",
+        "binaryPropertyName": "base64DataUrlBinary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        1160
+      ],
+      "id": "0928edd9-ddc0-4349-98cf-6c991f680b3f",
+      "name": "Extract from File7"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "base64DataBinary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        340
+      ],
+      "id": "5b527017-3b81-45ee-b4d9-50fd8b539187",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        340,
+        1020
+      ],
+      "id": "a15aa3de-a30f-4351-be71-3d1ead4a1960",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "extractedFile",
+        "options": {
+          "includeBinaries": true
+        }
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        600,
+        1440
+      ],
+      "id": "d953c293-f164-4251-9fd3-56596da0712a",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When chat message received').item.json.sessionId }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1480,
+        1740
+      ],
+      "id": "85a07298-3d68-49fc-a841-19840135e734",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "files",
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        120,
+        1020
+      ],
+      "id": "b1660207-b2de-43e2-b667-3d078c57a0d0",
+      "name": "Split Out",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = $input.all().at(0)?.binary\nconst isfilesSent = typeof files === 'object' && Object.keys(files)?.length\n\nif(isfilesSent){\n  return { files }\n}\n\nreturn $input.all()"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        1020
+      ],
+      "id": "268b7134-777a-426c-9fb9-181a703d8cc3",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "options": {
+          "fileName": "={{ $json.fileName }}",
+          "mimeType": "=audio/wav"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1420,
+        1000
+      ],
+      "id": "1c115da8-555b-4d41-bdb9-1c420b4125e2",
+      "name": "Convert to File6"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2040,
+        1060
+      ],
+      "id": "abc8a4a0-de44-42bd-81aa-b659a7aff05c",
+      "name": "OpenAI",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "notesInFlow": false,
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "failed to convert audio"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Table Name: coromandel\nPrimary Columns:\nProduct Name: Name of the product (e.g., “MAGNITE”, “ADVANTA 751 ELITE MAIZE”)\nBrand: Brand of the product (e.g., “VISHWANATH”, “COROMANDEL INTERNATIONAL LIMITED”)\nManufacturer: Company or agency responsible for manufacturing\nDescription: Contains detailed information and usage (may include crop, formulation, or purpose)\nSize: Pack size (e.g., “100 ML”, “4 KG”)\nItemNumber: Internal identifier\nSKUCode: SKU identifier (optional, may be missing)\nProductId: Numeric unique ID\nCategory Name: Main category (e.g., FUNGICIDE, HERBICIDE, INSECTICIDE, SEEDS)\n\nYou are an AI assistant specialized in helping users find farm input products from Coromandel International.\nYour knowledge comes from structured data stored in the coromandel table in Supabase.\n\nYou help users discover products like:\nFertilizers (e.g., Urea, Complex Fertiliser, StraightK Fertiliser)\nCrop Protection (e.g., Fungicide, Insecticide, Herbicide, Bio-Insecticide)\nGrowth Enhancers (e.g., Plant Growth Regulator, Speciality Nutrients, Organic)\nSeeds (e.g., Maize, Cotton, Paddy)\nOther Inputs (e.g., Implements, Veterinary, General)\n\nUser Query Understanding\nIf the user provides a general request (e.g., “I need something for pest control” or “Show fertilizers”):\n\nMatch the query to one of the predefined Category Name values:\n\nGeneral, FUNGICIDE, FERTILISERS, HERBICIDE, BIO-INSECTICIDE,IMPLEMENTS, COTTON, StraightK Fertiliser, ORGANIC, INSECTICIDE,\nUrea, SPECIALITY NUTRIENTS, PLANT GROWTH REGULATOR, VETERINARY,\nComplex Fertiliser, MAIZE, PADDY\nSearch Strategy\n\nUse Category Name ILIKE '%<category>%' to retrieve matches from the coromandel table.\n\nShow the entire row for each result.\n\nLimit to the top 5 results for brevity.\n\nIf the user specifies a brand or product name:\n\nAlso match against Brand ILIKE '%<brand>%' or Product Name ILIKE '%<name>%'.\n\nExample Queries & Responses\nUser: \"Show me fertilizers\"\n→ Match: FERTILISERS\n→ SQL:\nSELECT * FROM coromandel\nWHERE \"Category Name\" ILIKE '%FERTILISERS%'\nLIMIT 3;\nUser: \"Do you have anything for maize?\"\n→ Match: MAIZE\n→ SQL:\nSELECT * FROM coromandel\nWHERE \"Category Name\" ILIKE '%MAIZE%'\nLIMIT 3;\nUser: \"List some insecticides from Advanta\"\n→ Match: INSECTICIDE + Brand filter\n→ SQL:\nSELECT * FROM coromandel\nWHERE \"Category Name\" ILIKE '%INSECTICIDE%' AND Brand ILIKE '%Advanta%'\nLIMIT 3;",
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('sql_query') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1660,
+        1660
+      ],
+      "id": "34535284-3585-48a9-a23e-2d2fb1e2645a",
+      "name": "Query Document Rows",
+      "credentials": {
+        "postgres": {
+          "id": "OppxKTuR17k2wxru",
+          "name": "Postgres account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {
+          "allowFileUploads": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -360,
+        1020
+      ],
+      "id": "7a80a9ca-8d47-4074-a5ae-d918607d7276",
+      "name": "When chat message received",
+      "webhookId": "269a5eb1-c45a-4c54-aa3d-6055e8681f89"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Split Out').item.json.fileType }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cdbd5207-d996-430f-bd5e-a8253198e38e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e9b1a842-a87f-464e-9bf8-847026321ee3",
+                    "leftValue": "={{ $('Split Out').item.json.fileType }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": "={{ false }}"
+            }
+          ]
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1760,
+        1440
+      ],
+      "id": "6f6cc43a-f389-42c7-92a8-62fad40faf23",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "model": "=gpt-4o-mini-tts",
+        "input": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1960,
+        1340
+      ],
+      "id": "482258c6-3520-4c49-83d2-3cb1551df5a5",
+      "name": "generate audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "8c7df124-f5ef-4882-837b-67cf8420affb",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        1540
+      ],
+      "id": "8619011f-2e3b-49cb-8533-ef4db922c5cc",
+      "name": "Webhook",
+      "webhookId": "8c7df124-f5ef-4882-837b-67cf8420affb",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "responseDataSource": "set",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        2520,
+        1620
+      ],
+      "id": "35fa14d6-be31-4a67-b688-02cc29da872c",
+      "name": "Respond to Webhook",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        1620
+      ],
+      "id": "5268fc07-8e1f-4d3e-bda1-76501c4f7dba",
+      "name": "Code1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "object",
+        "operation": "create",
+        "bucketName": "stable-diffusion-images-bucket",
+        "objectName": "= {{ $('Split Out').item.json.fileName }}",
+        "createData": {},
+        "createQuery": {},
+        "encryptionHeaders": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "typeVersion": 1,
+      "position": [
+        2680,
+        1220
+      ],
+      "id": "8118949b-5ef2-48cc-8a23-aedd1b18922c",
+      "name": "Google Cloud Storage",
+      "credentials": {
+        "googleCloudStorageOAuth2Api": {
+          "id": "CSCLMSPtePqBBBpy",
+          "name": "Google Cloud Storage account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nconst bucket = item.bucket;\nconst objectName = item.name;\nconst encodedObjectName = encodeURIComponent(objectName);\n\nconst url = `https://storage.googleapis.com/${bucket}/${encodedObjectName}`;\n\nreturn [\n  {\n    json: {\n      mediaUrl: url\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2540,
+        1460
+      ],
+      "id": "9583408c-136f-44ae-a380-f7a3c72cc84f",
+      "name": "Code2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        2460,
+        1040
+      ],
+      "id": "f5c4ee28-6c4b-4c7d-93af-c04735ca1566",
+      "name": "Extract from File5",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        1980,
+        1540
+      ],
+      "id": "de1dd5b1-5cc9-46f0-a05e-769ad910f2b1",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nconst bucket = item.bucket;\nconst objectName = item.name;\nconst encodedObjectName = encodeURIComponent(objectName);\n\nconst url = `https://storage.googleapis.com/${bucket}/${encodedObjectName}`;\n\nreturn [\n  {\n    json: {\n      audio: url  // This key must be exactly \"audio\" for chatbot to show a player\n    }\n  }\n];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2820,
+        1400
+      ],
+      "id": "f4ad55fe-c53c-43cf-ae1f-7db3b88b748f",
+      "name": "Code4",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const item           = $input.first().json;\nconst bucket         = item.bucket;\nconst objectName     = item.name;\nconst encodedName    = encodeURIComponent(objectName);\n\n// Public (or signed-URL) to the file you just created/uploaded\nconst url = `https://storage.googleapis.com/${bucket}/${encodedName}`;\n\n// Build the HTML that will be rendered in the chat bubble\nconst html = `\n  <p>Here is your answer 👇</p>\n  <audio controls style=\"width:260px;margin-top:6px;\">\n     <source src=\"${url}\" type=\"audio/wav\">\n     Your browser does not support the audio element.\n  </audio>\n`;\n\nreturn [\n  {\n    json: {\n      output: html          // <-- the ONLY field ChatUI looks at\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        1260
+      ],
+      "id": "c49e4706-9eca-4a69-96af-f38c9793a01d",
+      "name": "with cloud storage",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "/*  1.  Grab the first item that came from the TTS node           */\nconst item = $input.first();\n\n/*  2.  The OpenAI node stores the file in item.binary.<field>.   *\n *      The default field name is “data”, but you can change it   *\n *      inside the node under “Put Output in Field”.               */\nconst bin      = item.binary.data;          // ↖ change if you renamed the field\nconst mime     = bin.mimeType || 'audio/mpeg';\nconst base64   = bin.data;                  // the actual base-64 string\nconst fileName = bin.fileName || 'speech';\n\n/*  3.  Build a data-URI so the browser can play it without       *\n *      downloading from an external server.                      */\nconst dataUri = `data:${mime};base64,${base64}`;\n\n/*  4.  Prepare the HTML that ChatUI will render                  */\nconst html = `\n  <p>Here is your answer 👇</p>\n  <audio controls style=\"width:260px;margin-top:6px;\">\n    <source src=\"${dataUri}\" type=\"${mime}\">\n    Your browser does not support the audio element.\n  </audio>\n`;\n\n/*  5.  Return the message.  IMPORTANT: The field must be called  *\n *      \"output\" for n8n-ChatUI to pick it up.                     */\nreturn [\n  {\n    json: {\n      output: html\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        1320
+      ],
+      "id": "4dec6dc6-5812-43fa-bbab-9076e49abb41",
+      "name": "direct audio"
+    },
+    {
+      "parameters": {
+        "cityName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('City', ``, 'string') }}",
+        "language": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Language', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.openWeatherMapTool",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        1680
+      ],
+      "id": "323a18d6-4c54-46dd-aece-abab49217701",
+      "name": "OpenWeatherMap",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "VSt77p5KiMEmTCnn",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "documents_coromandel",
+        "toolDescription": "Use RAG to look up information in the knowledgebase.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents_coromandel",
+          "mode": "list",
+          "cachedResultName": "documents_coromandel"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_documents_coromandel"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        1720
+      ],
+      "id": "4f00b648-b152-4de4-80a9-89187f00bd1e",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "jK39MwXl63HJbo3V",
+          "name": "iksula_hr_doc"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2020,
+        1940
+      ],
+      "id": "6ae78919-3405-4048-9741-6f6ad429993a",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "opkNg3RQ0U03w9cG",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File7",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File8",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File2": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File3": {
+      "main": [
+        [
+          {
+            "node": "Extract from File2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File4": {
+      "main": [
+        [
+          {
+            "node": "Extract from File3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File5": {
+      "main": [
+        [
+          {
+            "node": "Extract from File4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File7": {
+      "main": [
+        [
+          {
+            "node": "Extract from File6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File8": {
+      "main": [
+        [
+          {
+            "node": "Extract from File7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File6": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File7": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File6": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Document Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "generate audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate audio": {
+      "main": [
+        [
+          {
+            "node": "direct audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Cloud Storage": {
+      "main": [
+        []
+      ]
+    },
+    "with cloud storage": {
+      "main": [
+        []
+      ]
+    },
+    "OpenWeatherMap": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "c9c9aa1b-7a68-48ae-8dae-82faae0225bf",
+  "triggerCount": 1,
+  "shared": [
+    {
+      "createdAt": "2025-06-13T13:41:28.837Z",
+      "updatedAt": "2025-06-13T13:41:28.837Z",
+      "role": "workflow:owner",
+      "workflowId": "PEPVAQ2S2qwhDaAN",
+      "projectId": "dG371lM6unPJd2qz"
+    }
+  ],
+  "tags": []
+}
